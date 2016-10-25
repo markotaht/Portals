@@ -4,7 +4,9 @@
 		<title>Computer Graphcis - Task 7.2</title>
 		<script type="text/javascript" src="three.r81-tweaked.js"></script>
 		<script type="text/javascript">
-		
+			
+			
+			//Muutujad, mingit hetk tuleb üle vaadata
 			var renderer, scene, camera, stencilScene;
 			var textures = [];
 			var bumpTexture; //Store the bump texture in another variable
@@ -38,12 +40,12 @@
 		
 			function onLoad() { 
 				var canvasContainer = document.getElementById('myCanvasContainer'); 
-				var width = 800; 
+				var width  = 800; 
 				var height = 500;
 				
-				vertexShader = document.getElementById('vertexShader').textContent;
-				fragmentShader = document.getElementById('fragmentShader').textContent;
-				vertex2Shader = document.getElementById('vertex2Shader').textContent;
+				vertexShader    = document.getElementById('vertexShader').textContent;
+				fragmentShader  = document.getElementById('fragmentShader').textContent;
+				vertex2Shader   = document.getElementById('vertex2Shader').textContent;
 				fragment2Shader = document.getElementById('fragment2Shader').textContent;
 				
 				renderer = new THREE.WebGLRenderer({stencil: true}); 
@@ -52,7 +54,8 @@
 				renderer.autoClear = false
 				
 				scene = new THREE.Scene();
-				stencilScene = new THREE.Scene();
+				port1_scene = new THREE.Scene();
+				port2_scene = new THREE.Scene();
 				
 				camera = new THREE.PerspectiveCamera(80, width / height, 5, 1000);
 				camera.position.set(viewerPosition.x, viewerPosition.y, viewerPosition.z);
@@ -67,7 +70,7 @@
 				new THREE.MeshBasicMaterial({color: 0xeeeeee }))
 				
 				
-				
+				//Vana protaali moodus
 				port1_cam = new THREE.PerspectiveCamera(80,1, 1, 1000);	
 				port1_cam.position.set(-10, -1, 0);
 				port1_cam.up = new THREE.Vector3(0, 1, 0);
@@ -88,6 +91,8 @@
 				port1_1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
 				port2_1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
 				
+				
+				//Valguse liikumine
 				lightTrajectory = new THREE.CatmullRomCurve3([
 					new THREE.Vector3(-5, -7, 5 ),
 					new THREE.Vector3(-4, -7, -2 ),
@@ -96,21 +101,25 @@
 				]);
 				lightTrajectory.closed = true;
 				
+				//Objektide loomine ja stseenidesse paigutamine
 				addHangar();
-				port1_quad = addQuad(port1.texture, -10+0.1,-5,-0.001,Math.PI/2);
-				port2_quad = addQuad(port2.texture, 10-0.1, -5,0.001,-Math.PI/2);
-				
+				port1_quad = addQuad(port1.texture, -10+0.001,-5,-0.001,Math.PI/2);
+				port2_quad = addQuad(port2.texture, 10- 0.001, -5,0.001,-Math.PI/2);
+				port1_scene.add(port1_quad)
+				port2_scene.add(port2_quad)
 				draw();
 
 			}
 			
-			function portal_view(camera, src_portal, dst_portal) {
+			// Arvutab kaamera vaate(siin on veel migni jama sees, ei tööta kõige paremini)
+			function portal_view(camera, src_portal, dst_portal, kordaja) {
 				src_portal.updateMatrixWorld()
 				dst_portal.updateMatrixWorld()
 				camera.updateMatrixWorld()
+				
 				var inverse_view_to_source = new THREE.Matrix4().getInverse(camera.matrix).multiply(src_portal.matrix);
 				inverse_view_to_source = dst_portal.matrix.clone().multiply(inverse_view_to_source);
-				inverse_view_to_source.makeRotationY(Math.PI/4);
+				inverse_view_to_source.makeRotationY(kordaja*Math.PI/4);
 				
 				return inverse_view_to_source;
 			}
@@ -145,8 +154,9 @@
 				
 				scene.add(hangar);
 			}
+			
 			function draw() {
-				//requestAnimationFrame(draw);
+				requestAnimationFrame(draw);
 				
 				var m = millis() / 4000;
 				lightPosition = lightTrajectory.getPoint(m - parseInt(m));
@@ -158,6 +168,7 @@
 					}
 				});
 				
+				//Vana renderdus moodus portaalide jaoks
 			/*	https://gist.github.com/YenTheFirst/5201821
 				
 				port1_cam.matrixAutoUpdate = false;
@@ -188,13 +199,14 @@
 				
 				var gl = renderer.context;
 				
+				//Puhastame kõik buffrid ära
 				renderer.autoClear = false;
 				renderer.autoClear = false;
 				renderer.autoClear = false;
 				renderer.clear(true,true,true);
-				gl.clear(gl.STENCIL_BUFFER_BIT|gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT)
-				gl.stencilFunc(gl.ALWAYS,1,1)
-				gl.stencilOp(gl.KEEP,gl.KEEP,gl.REPLACE)
+				
+				//Valmistame stencli
+				gl.stencilOp(gl.INCR,gl.KEEP,gl.REPLACE)
 				gl.stencilMask(0xff);
 				
 				gl.colorMask(false,false,false,false)
@@ -202,38 +214,57 @@
 				
 				gl.enable(gl.STENCIL_TEST)
 				
-				renderer.render(stencilScene,camera)
+				//Portaal 1 stenclisse
+				gl.stencilFunc(gl.ALWAYS,1,0x1)
+				renderer.render(port1_scene,camera)
 				
-				gl.stencilFunc(gl.EQUAL	,1,1)
-				
-				gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP)
+				//Portaal 2 stenclisse
+				gl.stencilFunc(gl.ALWAYS,2,0x2);
+				renderer.render(port2_scene,camera)
 				
 				renderer.clear(false,true,false)
 				
 				gl.colorMask(true,true,true,true)
 				gl.depthMask(true)
 				camera.matrixAutoUpdate = false
-				camera.matrixWorld = portal_view(camera,port1_quad,port2_quad)
-			//	camera.updateMatrix()
+				
+				//Joonistame esimese protaali vaate
+				gl.stencilFunc(gl.EQUAL,1,0x1)
+				
+				gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP)
+				
+				camera.matrixWorld = portal_view(camera,port2_quad,port1_quad,-1)
 				renderer.render(scene,camera)
 				
-			//	camera.matrixWorld = original_mat
-			//	camera.matrixWorld = portal_view(camera,port2_quad,port1_quad)
-			//	camera.updateMatrix()
-			//	renderer.render(scene,camera)
+				//Joonistame teise portaali vaate
+				gl.stencilFunc(gl.EQUAL,2,0x2)
+				
+				gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP)
+				
+				camera.matrixWorld = portal_view(camera,port2_quad,port1_quad,1)
+				renderer.render(scene,camera)
+				
+				//Autab stenclist
 				gl.disable(gl.STENCIL_TEST)
 				renderer.clear(false,false,true);
-				camera.matrixWorld = original_mat.clone();
 				
+				//Paneme kaamera tagai algesse kohta
+				camera.matrixWorld = original_mat.clone();
+				camera.matrixAutoUpdate = true
+				
+				//Tühjendame sügavuspuhvri
 				renderer.clear(false,true,false);
 				
+				
+				//Joonistame mõlemad portaali stseenid
+				//Vajalik sest muidu ei teki portaale
 				gl.colorMask(false,false,false,false);
 				gl.depthMask(true);
-				port2_quad.position.z -= 0.0001;
-				renderer.render(stencilScene,camera)
-				port2_quad.position.z += 0.0001;
+				renderer.render(port1_scene,camera)
+				renderer.render(port2_scene,camera)
 				gl.enable(gl.DEPTH_TEST);
 				
+				//Joonistame lõpliku stseeni
 				gl.colorMask(true,true,true,true);
 				renderer.render(scene,camera)
 				
@@ -247,35 +278,32 @@
 				var quad = createQuad(texture);
 				quad.position.set(x, y, z);
 				quad.rotation.set(0, roty, 0);
-				
-				scene.add(quad);
-			//	var clone = quad.clone();
-				stencilScene.add(quad);
+
 				return quad;
 			}
 			
 			function createQuad(texture) {
 				var geometry = new THREE.PlaneGeometry(10, 10, 1);
 				var material = createTextureMaterial(texture);
-				var wall = new THREE.Mesh(geometry, material);
+				var wall     = new THREE.Mesh(geometry, material);
 				
 				return wall;
 			}
 			
 			function createWall(colorCode) {
 				var geometry = new THREE.PlaneGeometry(20, 20, 1);
-				var color = new THREE.Color(colorCode);
+				var color    = new THREE.Color(colorCode);
 				var material = createShaderMaterial(color);
-				var wall = new THREE.Mesh(geometry, material);
+				var wall     = new THREE.Mesh(geometry, material);
 				
 				return wall;
 			}
 			
 			function createCube(colorCode) {
 				var geometry = new THREE.BoxGeometry(2, 2, 2);
-				var color = new THREE.Color(colorCode);
+				var color    = new THREE.Color(colorCode);
 				var material = createShaderMaterial(color);
-				var cube = new THREE.Mesh(geometry, material);
+				var cube     = new THREE.Mesh(geometry, material);
 				
 				return cube;
 			}
@@ -316,10 +344,6 @@
 			}
 			
 		</script>
-		<!--
-			--Task--
-				Finish the fragment shader.
-		-->
 		<script id="vertexShader" type="x-shader/x-vertex">
 			varying vec3 interpolatedPosition;
 			varying vec3 interpolatedNormal;
@@ -333,8 +357,6 @@
 		</script>
 		<script id="fragmentShader" type="x-shader/x-fragment">
 			uniform vec3 lightPosition;
-			
-			//Receive the texture and bumpTexture uniforms here
 			
 			varying vec3 interpolatedPosition;
 			varying vec3 interpolatedNormal;
@@ -351,7 +373,6 @@
 				float shininess = 200.0;
 				
 				vec3 interpolatedColor = color* vec3(0.1) + color* max(0.0,dot(n,l)) + pow(max(0.0,dot(v,r)),shininess); 
-				//Do the same Phong's lighting/reflection model calculation that you did in Gouraud vertex shader before.
 				gl_FragColor = vec4(interpolatedColor, 1.0);
 			}
 		</script>
