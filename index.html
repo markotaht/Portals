@@ -1,0 +1,384 @@
+<!DOCTYPE>
+<html>
+	<head>
+		<title>Computer Graphcis - Task 7.2</title>
+		<script type="text/javascript" src="three.r81-tweaked.js"></script>
+		<script type="text/javascript">
+		
+			var renderer, scene, camera, stencilScene;
+			var textures = [];
+			var bumpTexture; //Store the bump texture in another variable
+			var texturesToLoad = 6; //Load a lot of textures
+			var textureIndex = 0;
+			
+			var port1, port2, port1_1,port2_1;
+			
+			var vertexShader, fragmentShader, fragment2Shader, vertex2Shader;
+			
+			var lightPosition;
+			var lightTrajectory;
+			
+			var port1_cam;
+			var port1_quad;
+			
+			var port2_cam;
+			var port2_quad;
+			
+			var viewerPosition = new THREE.Vector3(0.0, 2.0, 15.0);
+			
+			function millis() {
+
+				return (new Date()).getTime();
+			}
+			
+			function toRad(degree) {
+			
+				return Math.PI * 2 * degree / 360;
+			}
+		
+			function onLoad() { 
+				var canvasContainer = document.getElementById('myCanvasContainer'); 
+				var width = 800; 
+				var height = 500;
+				
+				vertexShader = document.getElementById('vertexShader').textContent;
+				fragmentShader = document.getElementById('fragmentShader').textContent;
+				vertex2Shader = document.getElementById('vertex2Shader').textContent;
+				fragment2Shader = document.getElementById('fragment2Shader').textContent;
+				
+				renderer = new THREE.WebGLRenderer({stencil: true}); 
+				renderer.setSize(width, height);
+				canvasContainer.appendChild(renderer.domElement);
+				renderer.autoClear = false
+				
+				scene = new THREE.Scene();
+				stencilScene = new THREE.Scene();
+				
+				camera = new THREE.PerspectiveCamera(80, width / height, 5, 1000);
+				camera.position.set(viewerPosition.x, viewerPosition.y, viewerPosition.z);
+				camera.up = new THREE.Vector3(0, 0, -1);
+				camera.lookAt(new THREE.Vector3(0,0,0));
+			//	scene.add(camera);
+				
+				
+				scene.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), new THREE.MeshBasicMaterial({color: 0xeeeeee })));
+				
+				var object = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), 
+				new THREE.MeshBasicMaterial({color: 0xeeeeee }))
+				
+				
+				
+				port1_cam = new THREE.PerspectiveCamera(80,1, 1, 1000);	
+				port1_cam.position.set(-10, -1, 0);
+				port1_cam.up = new THREE.Vector3(0, 1, 0);
+				port1_cam.lookAt(new THREE.Vector3(0,0,0));
+				port1_cam.updateProjectionMatrix();
+				scene.add(port1_cam);
+
+				
+				port2_cam = new THREE.PerspectiveCamera(80,1, 1, 1000);
+				port2_cam.position.set(10, -1 , 0);
+				port2_cam.up = new THREE.Vector3(0, 1, 0);
+				port2_cam.lookAt(new THREE.Vector3(0,-3,0));
+				port2_cam.updateProjectionMatrix();
+				scene.add(port2_cam);
+				
+				port1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
+				port2 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
+				port1_1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
+				port2_1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
+				
+				lightTrajectory = new THREE.CatmullRomCurve3([
+					new THREE.Vector3(-5, -7, 5 ),
+					new THREE.Vector3(-4, -7, -2 ),
+					new THREE.Vector3( 3, -7, -4 ),
+					new THREE.Vector3( 8, -7, 6 ),
+				]);
+				lightTrajectory.closed = true;
+				
+				addHangar();
+				port1_quad = addQuad(port1.texture, -10+0.1,-5,-0.001,Math.PI/2);
+				port2_quad = addQuad(port2.texture, 10-0.1, -5,0.001,-Math.PI/2);
+				
+				draw();
+
+			}
+			
+			function portal_view(camera, src_portal, dst_portal) {
+				src_portal.updateMatrixWorld()
+				dst_portal.updateMatrixWorld()
+				camera.updateMatrixWorld()
+				var inverse_view_to_source = new THREE.Matrix4().getInverse(camera.matrix).multiply(src_portal.matrix);
+				inverse_view_to_source = dst_portal.matrix.clone().multiply(inverse_view_to_source);
+				inverse_view_to_source.makeRotationY(Math.PI/4);
+				
+				return inverse_view_to_source;
+			}
+			
+			function addHangar() {
+				var hangar = new THREE.Object3D();
+				var halfPi = Math.PI / 2;
+				
+				var leftWall = createWall(0x47d147);
+				leftWall.position.set(-10, 0, 0);
+				leftWall.rotation.set(0, halfPi, 0);
+				hangar.add(leftWall);
+				
+				var rightWall = createWall(0xff00ff);
+				rightWall.position.set(10, 0, 0);
+				rightWall.rotation.set(0, -halfPi, 0);
+				hangar.add(rightWall);
+				
+				var backWall = createWall(0x1436e1);
+				backWall.position.set(0, 0, -10);
+				hangar.add(backWall);
+				
+				var ceiling = createWall(0x00ffff);
+				ceiling.position.set(0, 10, 0);
+				ceiling.rotation.set(halfPi, 0, 0);
+				hangar.add(ceiling);
+				
+				var floor = createWall(0xffff00);
+				floor.position.set(0, -10, 0);
+				floor.rotation.set(-halfPi, 0, 0);
+				hangar.add(floor);
+				
+				scene.add(hangar);
+			}
+			function draw() {
+				//requestAnimationFrame(draw);
+				
+				var m = millis() / 4000;
+				lightPosition = lightTrajectory.getPoint(m - parseInt(m));
+				scene.children[0].position.set(lightPosition.x, lightPosition.y, lightPosition.z);
+				
+				scene.traverse(function(object) {
+					if (object.material !== undefined && object.material instanceof THREE.ShaderMaterial) {
+						object.material.uniforms.lightPosition.value = new THREE.Vector3().copy(lightPosition).applyMatrix4(camera.matrixWorldInverse);
+					}
+				});
+				
+			/*	https://gist.github.com/YenTheFirst/5201821
+				
+				port1_cam.matrixAutoUpdate = false;
+				port1_cam.matrixWorld = portal_view(camera,port1_quad,port2_quad);
+				port2_cam.matrixAutoUpdate = false;
+				port2_cam.matrixWorld = portal_view(camera,port2_quad,port1_quad);
+			*/	
+			//	renderer.render(scene,port1_cam,port2);
+			/*	port2_quad.material.uniforms.texture.value = port2.texture
+				port2_quad.material.needsUpdate = true
+				renderer.render(scene,port1_cam,port2_1);
+				port2_quad.material.uniforms.texture.value = port2_1.texture
+				port2_quad.material.needsUpdate = true
+				renderer.render(scene,port2_cam,port1);
+				port1_quad.material.uniforms.texture.value = port1.texture
+				port1_quad.material.needsUpdate = true
+				renderer.render(scene,port2_cam,port1_1);
+				port1_quad.material.uniforms.texture.value = port1_1.texture
+				port1_quad.material.needsUpdate = true
+				*/
+				
+				
+				
+			//	renderer.render(scene, camera);
+				
+				camera.updateMatrixWorld();
+				original_mat = camera.matrixWorld.clone();
+				
+				var gl = renderer.context;
+				
+				renderer.autoClear = false;
+				renderer.autoClear = false;
+				renderer.autoClear = false;
+				renderer.clear(true,true,true);
+				gl.clear(gl.STENCIL_BUFFER_BIT|gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT)
+				gl.stencilFunc(gl.ALWAYS,1,1)
+				gl.stencilOp(gl.KEEP,gl.KEEP,gl.REPLACE)
+				gl.stencilMask(0xff);
+				
+				gl.colorMask(false,false,false,false)
+				gl.depthMask(false);
+				
+				gl.enable(gl.STENCIL_TEST)
+				
+				renderer.render(stencilScene,camera)
+				
+				gl.stencilFunc(gl.EQUAL	,1,1)
+				
+				gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP)
+				
+				renderer.clear(false,true,false)
+				
+				gl.colorMask(true,true,true,true)
+				gl.depthMask(true)
+				camera.matrixAutoUpdate = false
+				camera.matrixWorld = portal_view(camera,port1_quad,port2_quad)
+			//	camera.updateMatrix()
+				renderer.render(scene,camera)
+				
+			//	camera.matrixWorld = original_mat
+			//	camera.matrixWorld = portal_view(camera,port2_quad,port1_quad)
+			//	camera.updateMatrix()
+			//	renderer.render(scene,camera)
+				gl.disable(gl.STENCIL_TEST)
+				renderer.clear(false,false,true);
+				camera.matrixWorld = original_mat.clone();
+				
+				renderer.clear(false,true,false);
+				
+				gl.colorMask(false,false,false,false);
+				gl.depthMask(true);
+				port2_quad.position.z -= 0.0001;
+				renderer.render(stencilScene,camera)
+				port2_quad.position.z += 0.0001;
+				gl.enable(gl.DEPTH_TEST);
+				
+				gl.colorMask(true,true,true,true);
+				renderer.render(scene,camera)
+				
+
+			}
+			
+			
+			function addQuad(texture, x, y, z, roty) {
+				var halfPi = Math.PI / 2;
+			
+				var quad = createQuad(texture);
+				quad.position.set(x, y, z);
+				quad.rotation.set(0, roty, 0);
+				
+				scene.add(quad);
+			//	var clone = quad.clone();
+				stencilScene.add(quad);
+				return quad;
+			}
+			
+			function createQuad(texture) {
+				var geometry = new THREE.PlaneGeometry(10, 10, 1);
+				var material = createTextureMaterial(texture);
+				var wall = new THREE.Mesh(geometry, material);
+				
+				return wall;
+			}
+			
+			function createWall(colorCode) {
+				var geometry = new THREE.PlaneGeometry(20, 20, 1);
+				var color = new THREE.Color(colorCode);
+				var material = createShaderMaterial(color);
+				var wall = new THREE.Mesh(geometry, material);
+				
+				return wall;
+			}
+			
+			function createCube(colorCode) {
+				var geometry = new THREE.BoxGeometry(2, 2, 2);
+				var color = new THREE.Color(colorCode);
+				var material = createShaderMaterial(color);
+				var cube = new THREE.Mesh(geometry, material);
+				
+				return cube;
+			}
+			
+			function createShaderMaterial(color) {
+				
+				return new THREE.ShaderMaterial({
+					uniforms: {
+						lightPosition:{
+							type: 'v3',
+							value: lightPosition
+						},
+						color:{
+							value: color
+						},
+					},
+					vertexShader: vertexShader,
+					fragmentShader: fragmentShader
+				});
+			}
+			
+			function createTextureMaterial(texture) {
+			
+				return new THREE.ShaderMaterial({
+					uniforms: {
+						lightPosition:{
+							type: 'v3',
+							value: lightPosition
+						},
+						texture: {
+							type: 't',
+							value: texture
+						}
+					},
+					vertexShader: vertex2Shader,
+					fragmentShader: fragment2Shader
+				});
+			}
+			
+		</script>
+		<!--
+			--Task--
+				Finish the fragment shader.
+		-->
+		<script id="vertexShader" type="x-shader/x-vertex">
+			varying vec3 interpolatedPosition;
+			varying vec3 interpolatedNormal;
+			
+			void main() {
+				interpolatedPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
+				interpolatedNormal = normalMatrix * normal;
+				
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+			}
+		</script>
+		<script id="fragmentShader" type="x-shader/x-fragment">
+			uniform vec3 lightPosition;
+			
+			//Receive the texture and bumpTexture uniforms here
+			
+			varying vec3 interpolatedPosition;
+			varying vec3 interpolatedNormal;
+			
+			uniform vec3 color;
+			void main() {
+				vec3 viewerPosition = vec3(0.0);
+			
+				vec3 n = normalize(interpolatedNormal);
+				vec3 l = normalize(lightPosition - interpolatedPosition);
+				vec3 v = normalize(viewerPosition - interpolatedPosition);
+				
+				vec3 r = normalize(reflect(-l,n));
+				float shininess = 200.0;
+				
+				vec3 interpolatedColor = color* vec3(0.1) + color* max(0.0,dot(n,l)) + pow(max(0.0,dot(v,r)),shininess); 
+				//Do the same Phong's lighting/reflection model calculation that you did in Gouraud vertex shader before.
+				gl_FragColor = vec4(interpolatedColor, 1.0);
+			}
+		</script>
+		<script id="vertex2Shader" type="x-shader/x-vertex">
+			varying vec2 interpolatedUv;
+			
+			void main() {
+				interpolatedUv = uv;
+				
+				gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+			}
+		</script>
+		<script id="fragment2Shader" type="x-shader/x-fragment">
+			varying vec2 interpolatedUv;
+			
+			uniform sampler2D texture;
+			
+			void main() {
+			
+				
+				vec3 color = texture2D(texture, interpolatedUv).rgb; 
+				gl_FragColor = vec4(color, 1.0);
+			}
+	</script>
+	</head>
+	<body onload="onLoad()">
+		<div id="myCanvasContainer"></div>
+		<div id="statusContainer"></div>
+	</body>
+</html>
