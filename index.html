@@ -65,11 +65,12 @@
 			//	scene.add(camera);
 			//	camera.rotation.set(0,-Math.PI/2,0)
 				
+			
+				//Valguskera
 				scene.add(new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), new THREE.MeshBasicMaterial({color: 0xeeeeee })));
 				
-				var object = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), 
-				new THREE.MeshBasicMaterial({color: 0xeeeeee }))
-				
+				//var object = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), 
+				//new THREE.MeshBasicMaterial({color: 0xeeeeee }))
 				
 				//Vana protaali moodus
 				port1_cam = new THREE.PerspectiveCamera(80,1, 1, 1000);	
@@ -139,7 +140,20 @@
 					}
 				}, false);
 				
+				var randomObjects = new THREE.Object3D();
 				
+				var cube = createCube(0x3DE5CF); //new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), createShaderMaterial(new THREE.Color(0x3DE5CF)));
+				cube.position.set(1, 3, 5);
+				cube.scale.set(2, 2, 2);
+				randomObjects.add(cube);
+				
+				var sphere = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 32), createShaderMaterial(new THREE.Color(0xE55B3D)));
+				sphere.position.set(-4, -2, 0);
+				randomObjects.add(sphere);
+				
+
+				randomObjects.position.set(0, 0, 0);
+				scene.add(randomObjects);
 				draw();
 
 			}
