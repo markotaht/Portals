@@ -32,8 +32,12 @@
 
 			var clock = new THREE.Clock();
 			var keyboard = new THREEx.KeyboardState();		
-			var vector = new THREE.Vector3();
-			var theta;
+
+
+			var wallPos = 20; // seina kaugus 0punktist
+			var quadSideLength = 15; // portaali quadi küljepikkus
+
+
 			function parseControls(dt) {
 				if(keyboard.pressed("left")){
 					camera.rotation.y += toRad(60 * dt % 360);
@@ -54,13 +58,16 @@
 					camera.translateX(10 * dt % 360)
 				}
 				if(keyboard.pressed("q")){ // Q liigutab y +
-					camera.position.y -= 10 * dt % 360;
+					if (camera.position.y > -wallPos) {
+						camera.position.y -= 10 * dt % 360;
+					}
 				}
 				if(keyboard.pressed("e")){ // E liigutab y -
-					camera.position.y += 10 * dt % 360;
+					if (camera.position.y < wallPos) {
+						camera.position.y += 10 * dt % 360;
+					}		
 				}
-				//console.log(camera.getWorldDirection());	
-				//speed = Math.min(Math.max(0, speed), 10);
+
 			}
 
 /*			function millis() {
@@ -140,39 +147,11 @@
 				
 				//Objektide loomine ja stseenidesse paigutamine
 				addHangar();
-				port1_quad = addQuad(port1.texture, -10+0.001,-5,-0.001,Math.PI/2);
-				port2_quad = addQuad(port2.texture, 10- 0.001, -5,0.001,-Math.PI/2);
+				port1_quad = addQuad(port1.texture, -wallPos+0.001,-5,-0.001,Math.PI/2);
+				port2_quad = addQuad(port2.texture, wallPos- 0.001, -5,0.001,-Math.PI/2);
 				port1_scene.add(port1_quad)
 				port2_scene.add(port2_quad)
 				
-/*				window.addEventListener('keydown', function(event) {
-					if (event.keyCode == 39) { //Right arrow
-						//Decrease the fov and call the changeMainCameraFov.
-						camera.rotation.y -= toRad(3);
-					}
-					if (event.keyCode == 37) { //Left arrow
-						//Increase the fov and call the changeMainCameraFov.
-						camera.rotation.y += toRad(3);
-					}
-					if(event.keyCode == 87){ //w
-						camera.position.z -= 1;
-					}
-					if(event.keyCode == 65){ //a
-						camera.position.x -= 1;
-					}
-					if(event.keyCode == 83){ //s
-						camera.position.z += 1;
-					}
-					if(event.keyCode == 68){ //d
-						camera.position.x += 1;
-					}
-					if(event.keyCode == 81){ //q
-						camera.position.y += 1;
-					}
-					if(event.keyCode == 69){ //e
-						camera.position.y -= 1;
-					}
-				}, false);*/
 				
 				var randomObjects = new THREE.Object3D();
 				
@@ -188,6 +167,7 @@
 
 				randomObjects.position.set(0, 0, 0);
 				scene.add(randomObjects);
+				console.log(port1_quad);
 				draw();
 
 			}
@@ -212,28 +192,30 @@
 			function addHangar() {
 				var hangar = new THREE.Object3D();
 				var halfPi = Math.PI / 2;
+				//var wallPos = 20;
+				var wallSize = 2*wallPos;
 				
-				var leftWall = createWall(0x47d147);
-				leftWall.position.set(-10, 0, 0);
+				var leftWall = createWall(0x47d147, wallSize);
+				leftWall.position.set(-wallPos, 0, 0);
 				leftWall.rotation.set(0, halfPi, 0);
 				hangar.add(leftWall);
 				
-				var rightWall = createWall(0xff00ff);
-				rightWall.position.set(10, 0, 0);
+				var rightWall = createWall(0xff00ff, wallSize);
+				rightWall.position.set(wallPos, 0, 0);
 				rightWall.rotation.set(0, -halfPi, 0);
 				hangar.add(rightWall);
 				
-				var backWall = createWall(0x1436e1);
-				backWall.position.set(0, 0, -10);
+				var backWall = createWall(0x1436e1, wallSize);
+				backWall.position.set(0, 0, -wallPos);
 				hangar.add(backWall);
 				
-				var ceiling = createWall(0x00ffff);
-				ceiling.position.set(0, 10, 0);
+				var ceiling = createWall(0x00ffff, wallSize);
+				ceiling.position.set(0, wallPos, 0);
 				ceiling.rotation.set(halfPi, 0, 0);
 				hangar.add(ceiling);
 				
-				var floor = createWall(0xffff00);
-				floor.position.set(0, -10, 0);
+				var floor = createWall(0xffff00, wallSize);
+				floor.position.set(0, -wallPos, 0);
 				floor.rotation.set(-halfPi, 0, 0);
 				hangar.add(floor);
 				
@@ -252,8 +234,33 @@
 				lightPosition = lightTrajectory.getPoint(m - parseInt(m));
 				scene.children[0].position.set(lightPosition.x, lightPosition.y, lightPosition.z);
 				var temp = new THREE.Vector3().copy(lightPosition).applyMatrix4(camera.matrixWorldInverse);
-				light.set(temp.x,temp.y,temp.z)
+				light.set(temp.x,temp.y,temp.z);
 				
+				//console.log(camera.position.y)
+				// telepordime kaamera x pos ja quadi piiride järgi
+				if (camera.position.x > wallPos-1) {
+					if (camera.position.y < port1_quad.position.y + quadSideLength/2 && camera.position.y > port1_quad.position.y - quadSideLength/2 && Math.abs(camera.position.z) < quadSideLength/2) {
+						camera.position.x = -wallPos+1;
+					}
+					else {
+						camera.position.x -= 0.25;
+					}
+				}
+				else if (camera.position.x < -wallPos+1) {
+					if (camera.position.y < port2_quad.position.y + quadSideLength/2 && camera.position.y > port2_quad.position.y - quadSideLength/2 && Math.abs(camera.position.z) < quadSideLength/2) {
+						camera.position.x = wallPos-1;
+					}
+					else {
+						camera.position.x += 0.25;
+					}
+				}
+				// labane kontroll, mis ei lase kaameral hangaarist välja minna
+				if (camera.position.z > wallPos) {
+					camera.position.z -= 0.25;
+				}
+				else if (camera.position.z < -wallPos) {
+					camera.position.z += 0.25;
+				}			
 				//Vana renderdus moodus portaalide jaoks
 			/*	https://gist.github.com/YenTheFirst/5201821
 				
@@ -360,7 +367,9 @@
 
 			}
 			
-			
+			function teleportCam(portal) {
+
+			}
 			function addQuad(texture, x, y, z, roty) {
 				var halfPi = Math.PI / 2;
 			
@@ -372,15 +381,16 @@
 			}
 			
 			function createQuad(texture) {
-				var geometry = new THREE.PlaneGeometry(10, 10, 1);
+
+				var geometry = new THREE.PlaneGeometry(quadSideLength, quadSideLength, 1);
 				var material = createTextureMaterial(texture);
 				var wall     = new THREE.Mesh(geometry, material);
 				
 				return wall;
 			}
 			
-			function createWall(colorCode) {
-				var geometry = new THREE.PlaneGeometry(20, 20, 1);
+			function createWall(colorCode, wallSize) {
+				var geometry = new THREE.PlaneGeometry(wallSize, wallSize, 1);
 				var color    = new THREE.Color(colorCode);
 				var material = createShaderMaterial(color);
 				var wall     = new THREE.Mesh(geometry, material);
