@@ -182,10 +182,11 @@
 				dst_portal.updateMatrixWorld()
 				camera.updateMatrixWorld()
 				
-				var inverse_view_to_source = new THREE.Matrix4().getInverse(camera.matrix).multiply(src_portal.matrix);
-				inverse_view_to_source = dst_portal.matrix.clone().multiply(inverse_view_to_source);
-				inverse_view_to_source.makeRotationY(kordaja*	Math.PI/2);
 				
+				var inverse_view_to_source = new THREE.Matrix4().getInverse(camera.matrix).multiply(src_portal.matrix);
+				inverse_view_to_source.makeRotationY(Math.PI);
+				inverse_view_to_source = dst_portal.matrix.clone().multiply(inverse_view_to_source);
+				//console.log(inverse_view_to_source);
 				return inverse_view_to_source;
 			}
 			
@@ -362,6 +363,7 @@
 				
 				//Joonistame lõpliku stseeni
 				gl.colorMask(true,true,true,true);
+				camera.matrixWorld = portal_view(camera,port2_quad,port1_quad,-1)
 				renderer.render(scene,camera)
 				
 
