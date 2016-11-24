@@ -160,10 +160,13 @@
 				cube.scale.set(2, 2, 2);
 				randomObjects.add(cube);
 				
-				var sphere = new THREE.Mesh(new THREE.SphereGeometry(3, 32, 32), createShaderMaterial(new THREE.Color(0xE55B3D)));
+				var sphere = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), createShaderMaterial(new THREE.Color(0xE55B3D)));
 				sphere.position.set(-4, -2, 0);
 				randomObjects.add(sphere);
-				
+
+				var sphere2 = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), createShaderMaterial(new THREE.Color(0x63ef40)));
+				sphere2.position.set(2, -15, 1);
+				randomObjects.add(sphere2);
 
 				randomObjects.position.set(0, 0, 0);
 				scene.add(randomObjects);
@@ -326,7 +329,7 @@
 				
 				gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP)
 				
-				camera.matrixWorld = portal_view(camera,port1_quad,port2_quad,1)
+				camera.matrixWorld.fromArray(portal_view(camera,port1_quad,port2_quad,1).elements)
 				var temp = new THREE.Vector3().copy(lightPosition).applyMatrix4(camera.matrixWorldInverse);
 				light.set(temp.x,temp.y,temp.z)
 				renderer.render(scene,camera)
