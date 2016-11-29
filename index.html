@@ -147,7 +147,7 @@
 				
 				//Objektide loomine ja stseenidesse paigutamine
 				addHangar();
-				port1_quad = addQuad(port1.texture, -wallPos+0.001,-5,-0.001,Math.PI/2);
+				port1_quad = addQuad(port1.texture, -wallPos+0.001,-5,0.001, Math.PI/2);
 				port2_quad = addQuad(port2.texture, wallPos- 0.001, -5,0.001,-Math.PI/2);
 				port1_scene.add(port1_quad)
 				port2_scene.add(port2_quad)
@@ -188,25 +188,32 @@
 				var camerapos = new THREE.Vector3();
 				var camerarot = new THREE.Quaternion();
 				var camerascale = new THREE.Vector3();
-				
 				camera.matrix.decompose(camerapos,camerarot,camerascale);
-				var srcportpos = new THREE.Vector3().copy(src_portal.position);
-				var srcportrot = new THREE.Vector3().copy(src_portal.rotation);
-				var dstportpos = new THREE.Vector3().copy(dst_portal.position);
-				var dstportrot = new THREE.Vector3().copy(dst_portal.rotation);
+				
+				var srcpos = new THREE.Vector3();
+				var srcquat = new THREE.Quaternion();
+				var srcscale = new THREE.Vector3();
+				src_portal.matrix.decompose(srcpos, srcquat, srcscale);
 				
 				var destquat = new THREE.Quaternion();
 				var destpos = new THREE.Vector3();
 				var destscale = new THREE.Vector3();
 				dst_portal.matrix.decompose(destpos,destquat,destscale);
 				
-				var diff = srcportpos.sub(camerapos);
-			//	diff.applyAxisAngle(new THREE.Vector3(0,1,0), dstportrot.y);
+				var diff = camerapos.clone().sub(srcpos);
 				
-				var newcampos = camerapos.add(new THREE.Vector3(40*kordaja, 0,0));
 				
-				var rot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
-			//	camerarot = camerarot.multiply(rot);
+				//IF ortation between2 portals is 180 its all ok
+				//any other and we need to rotate
+
+				var ydiff = src_portal.rotation.y - dst_portal.rotation.y - Math.PI;
+				diff.applyAxisAngle(new THREE.Vector3(0,1,0),-ydiff);
+				var newcampos = diff.add(destpos);
+				var yrotvec = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-ydiff);
+				console.log(yrotvec)
+				srcquat = srcquat.multiply(destquat.inverse());
+			//	var rot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
+				camerarot = camerarot.multiply(yrotvec);
 				
 				var inverse_view_to_source = new THREE.Matrix4();
 				inverse_view_to_source.compose(newcampos,camerarot,camerascale);
