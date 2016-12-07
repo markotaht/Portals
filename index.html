@@ -165,7 +165,6 @@
 
 				randomObjects.position.set(0, 0, 0);
 				scene.add(randomObjects);
-				console.log(port1_quad);
 				draw();
 
 			}
@@ -258,7 +257,6 @@
 				lightPosition = lightTrajectory.getPoint(m - parseInt(m));
 				scene.children[0].position.set(lightPosition.x, lightPosition.y, lightPosition.z);
 				light.set(lightPosition.x,lightPosition.y,lightPosition.z);
-				console.log(lightPosition, light);
 				
 				// telepordime kaamera x pos ja quadi piiride järgi
 				if (camera.position.x > wallPos-1) {
