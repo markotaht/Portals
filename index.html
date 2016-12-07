@@ -274,6 +274,7 @@
 				scene.children[0].position.set(lightPosition.x, lightPosition.y, lightPosition.z);
 				var temp = new THREE.Vector3().copy(lightPosition).applyMatrix4(camera.matrixWorldInverse);
 				light.set(temp.x,temp.y,temp.z);
+				console.log(lightPosition, light);
 				
 				//console.log(camera.position.y)
 				// telepordime kaamera x pos ja quadi piiride järgi
@@ -364,10 +365,11 @@
 				
 				gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP)
 				
-				camera.matrixWorld.fromArray(portal_view(camera,port1_quad,port2_quad,1).elements)
+				camera.matrixWorld = portal_view(camera,port1_quad,port2_quad,1)
 				var temp = new THREE.Vector3().copy(lightPosition).applyMatrix4(camera.matrixWorldInverse);
-				light.set(temp.x,temp.y,temp.z)
+				//light.set(temp.x,temp.y,temp.z)
 				renderer.render(scene,camera)
+				console.log(lightPosition, light);
 
 				//Joonistame teise portaali vaate
 				gl.stencilFunc(gl.EQUAL,2,0xff)
@@ -376,8 +378,9 @@
 				camera.matrixWorld = original_mat
 				camera.matrixWorld = portal_view(camera,port2_quad,port1_quad,-1)
 				var temp = new THREE.Vector3().copy(lightPosition).applyMatrix4(camera.matrixWorldInverse);
-				light.set(temp.x,temp.y,temp.z)
+				//lightPosition.set(temp.x,temp.y,temp.z)
 				renderer.render(scene,camera)
+				console.log(lightPosition, light);
 				
 				//Aitab stenclist
 				gl.disable(gl.STENCIL_TEST)
@@ -386,6 +389,8 @@
 				//Paneme kaamera tagai algesse kohta
 				camera.matrixWorld = original_mat.clone();
 				camera.matrixAutoUpdate = true
+				var temp = new THREE.Vector3().copy(lightPosition).applyMatrix4(camera.matrixWorldInverse);
+				//lightPosition.set(temp.x,temp.y,temp.z)
 				
 				//Tühjendame sügavuspuhvri
 				renderer.clear(false,true,false);
