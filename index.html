@@ -11,7 +11,7 @@
 			var renderer, scene, camera, stencilScene;
 			var textures = [];
 			var bumpTexture; //Store the bump texture in another variable
-			var texturesToLoad = 6; //Load a lot of textures
+			var texturesToLoad = 5; //Load a lot of textures
 			var textureIndex = 0;
 			
 			var port1, port2, port1_1,port2_1;
@@ -37,6 +37,7 @@
 			var wallPos = 20; // seina kaugus 0punktist
 			var quadSideLength = 15; // portaali quadi küljepikkus
 
+			var hangar;
 
 			function parseControls(dt) {
 				if(keyboard.pressed("left")){
@@ -140,8 +141,14 @@
 				lightTrajectory.closed = true;
 				light = new THREE.Vector3();
 				
+				//Light so that walls with phong material could be seen
+				//TODO: combine with our light
+				var plight = new THREE.PointLight( 0xffffff, 1, 100 );
+				plight.position.set(10, 1, 15);
+				scene.add(plight);
+				
 				//Objektide loomine ja stseenidesse paigutamine
-				addHangar();
+				hangar = addHangar();
 				port1_quad = addQuad(port1.texture, -wallPos+0.001,-5,0.001, Math.PI/2);
 				port2_quad = addQuad(port2.texture, wallPos- 0.001, -5,0.001,-Math.PI/2);
 				port1_scene.add(port1_quad);
@@ -165,8 +172,49 @@
 
 				randomObjects.position.set(0, 0, 0);
 				scene.add(randomObjects);
-				draw();
+				
+				//textures
+				var loader = new THREE.TextureLoader();
+				loader.setCrossOrigin('Anonymous'); //This is needed because we are fetching files from another "server".
+													//Local files do not work unless you have a web server running.
+				loader.setPath('http://cglearn.codelight.eu/files/course/7/textures/');
 
+				loader.load('wallTexture.jpg', onTextureLoaded);
+				loader.load('ut256.png', onTextureLoaded);
+				loader.load('wallTexture2.jpg', onTextureLoaded);
+				loader.load('stripeTexture.png', onTextureLoaded);
+				loader.load('sasuke256.png', onTextureLoaded);
+				
+				//draw();
+
+			}
+
+			function onTextureLoaded(texture) {
+				//You may want to change some min and mag filters of the texture here.
+				//You do want to make the texture repeating. Default is clamped at the edges.
+				//After changing texture properties, tell it that it needs an update.
+				texture.wrapS = THREE.RepeatWrapping;
+				texture.wrapT = THREE.RepeatWrapping;
+				//texture.wrapT = THREE.MirroredRepeatWrapping;
+
+				//texture.minFilter = THREE.NearestFilter;
+				//texture.magFilter = THREE.NearestFilter;
+				
+				//Push the texture to the array.
+				textures.push(texture);
+				
+				if (--texturesToLoad == 0) {
+					onAllTexturesLoaded();
+				}
+			}
+			
+
+			function onAllTexturesLoaded() {
+				for (var i = 0; i < 5; i++){
+					hangar.children[i].material.map = textures[i];
+					hangar.children[i].material.needsUpdate = true;
+				}
+				draw();
 			}
 			
 			// Arvutab kaamera vaate(siin on veel migni jama sees, ei tööta kõige paremini)
@@ -243,6 +291,7 @@
 				hangar.add(floor);
 				
 				scene.add(hangar);
+				return hangar;
 			}
 			
 			function draw() {
@@ -384,7 +433,9 @@
 			function createWall(colorCode, wallSize) {
 				var geometry = new THREE.PlaneGeometry(wallSize, wallSize, 1);
 				var color    = new THREE.Color(colorCode);
-				var material = createShaderMaterial(color);
+				//Replaced our custom material with phong
+				//TODO: replace for other things too, make our light work with it
+				var material = new THREE.MeshPhongMaterial({ color: colorCode, specular: 0x555555, shininess: 30 });
 				var wall     = new THREE.Mesh(geometry, material);
 				
 				return wall;
