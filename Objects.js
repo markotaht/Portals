@@ -1,23 +1,26 @@
 function createObjects(scene){
 	var randomObjects = new THREE.Object3D();
 	
-	var cube = createCube(0x3DE5CF); //new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), createShaderMaterial(new THREE.Color(0x3DE5CF)));
-	cube.position.set(1, 3, 5);
-	cube.scale.set(2, 2, 2);
-	randomObjects.add(cube);
-	
-	var sphere = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), new THREE.MeshPhongMaterial({ color: 0xE55B3D, specular: 0x555555, shininess: 30 }));
-	sphere.position.set(-4, -2, 0);
-	randomObjects.add(sphere);
-
-	var sphere2 = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), new THREE.MeshPhongMaterial({ color: 0x63ef40, specular: 0x555555, shininess: 30 }));
-	sphere2.position.set(2, -15, 1);
-	randomObjects.add(sphere2);
+	for (var i = 0; i < 10; i++) {
+		var cube = createCube('#'+(Math.random()*0xFFFFFF<<0).toString(16)); //new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), createShaderMaterial(new THREE.Color(0x3DE5CF)));
+		cube.position.set(randInt(-40,40), randInt(-30,20), randInt(-40,40));
+		cube.scale.set(randInt(1,4), randInt(1,4), randInt(1,4));
+		randomObjects.add(cube);
+	}
+	for (var i = 0; i < 10; i++) {
+		var sphere = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32),
+					new THREE.MeshPhongMaterial({ color: '#'+(Math.random()*0xFFFFFF<<0).toString(16), specular: 0x555555, shininess: 30 }));
+		cube.position.set(randInt(-50,40), randInt(-10,20), randInt(-40,50));
+		sphere.scale.set(randInt(1,2), randInt(1,2), randInt(1,2));
+		randomObjects.add(sphere);		
+	}
 
 	randomObjects.position.set(0, 0, 0);
-	scene.add(randomObjects)
+	scene.add(randomObjects);
 }
-
+function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 function addHangar(scene) {
 	var hangar = new THREE.Object3D();
 	var halfPi = Math.PI / 2;

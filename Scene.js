@@ -22,8 +22,10 @@ var clock = new THREE.Clock();
 var keyboard = new THREEx.KeyboardState();		
 
 
-var wallPos = 20; // seina kaugus 0punktist
+var wallPos = 50; // seina kaugus 0punktist
 var quadSideLength = 10; // portaali quadi küljepikkus
+
+var speed = 1;
 
 var hangar;
 
@@ -74,7 +76,6 @@ function onLoad() {
 	port2_quad = addQuad(port2.texture, wallPos- 0.001, -5,0.001,-Math.PI/2);
 	port1_quad.name = "portal1";
 	port2_quad.name = "portal2";
-	console.log(port1_quad);
 	port1_scene.add(port1_quad);
 	port2_scene.add(port2_quad);
 	
@@ -101,32 +102,48 @@ function toRad(degree) {
 			
 function parseControls(dt) {
 	if(keyboard.pressed("left")){
-		camera.rotation.y += toRad(60 * dt % 360);
+		camera.rotation.y += toRad(120 * speed/3 * dt % 360);
 	}
 	if(keyboard.pressed("right")){
-		camera.rotation.y -= toRad(60 * dt % 360);
+		camera.rotation.y -= toRad(120 * speed/3 * dt % 360);
+	}
+	if(keyboard.pressed("up")) {
+		port1_quad.scale.x += 0.1;
+		port1_quad.scale.y += 0.1;
+		port2_quad.scale.x += 0.1;
+		port2_quad.scale.y += 0.1;
+	}
+	if(keyboard.pressed("down")) {
+		port1_quad.scale.x -= 0.1;
+		port1_quad.scale.y -= 0.1;
+		port2_quad.scale.x -= 0.1;
+		port2_quad.scale.y -= 0.1;		
 	}
 	if(keyboard.pressed("w")){ // W edasi
-		camera.translateZ(-10 * dt % 360);
+		camera.translateZ(-10 * speed * dt % 360);
 	}
 	if(keyboard.pressed("s")){ // S tagasi
-		camera.translateZ(10 * dt % 360);
+		camera.translateZ(10 * speed * dt % 360);
 	}
 	if(keyboard.pressed("a")){ // A liigutab vasakule
-		camera.translateX(-10 * dt % 360)
+		camera.translateX(-10 * speed * dt % 360)
 	}
 	if(keyboard.pressed("d")){ // D liigutab paremale
-		camera.translateX(10 * dt % 360)
+		camera.translateX(10 * speed * dt % 360)
 	}
 	if(keyboard.pressed("q")){ // Q liigutab y +
 		if (camera.position.y > -wallPos) {
-			camera.position.y -= 10 * dt % 360;
+			camera.position.y -= 10 * speed * dt % 360;
 		}
 	}
 	if(keyboard.pressed("e")){ // E liigutab y -
 		if (camera.position.y < wallPos) {
-			camera.position.y += 10 * dt % 360;
+			camera.position.y += 10 * speed * dt % 360;
 		}		
+	}
+	if(keyboard.pressed("shift")) {
+		if (speed < 4)
+			speed += 0.2;
 	}
 	if(keyboard.pressed("z")){ // z tekitab P1
 		port1_quad.position.x = intersects[0].point.x;

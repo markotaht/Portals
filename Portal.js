@@ -51,7 +51,8 @@ function draw() {
 	requestAnimationFrame(draw);
 
 	var dt = clock.getDelta();
-
+	if (speed > 1)
+		speed -= 0.1;
 	parseControls(dt);
 	
 	var time = clock.getElapsedTime();
@@ -156,7 +157,7 @@ function draw() {
 	intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
 	var portal = null;
 	if (intersectsPortals.length >= 1) {
-		if (intersectsPortals[0].distance <= 0.6) {
+		if (intersectsPortals[0].distance <= 0.7) {
 			if (intersectsPortals[0].object.name == "portal1"){
 				console.log(intersectsPortals[0].object.name);
 				portal = port2_quad;
