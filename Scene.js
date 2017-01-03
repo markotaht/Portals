@@ -72,6 +72,9 @@ function onLoad() {
 	
 	port1_quad = addQuad(port1.texture, -wallPos+0.001,-5,0.001, Math.PI/2);
 	port2_quad = addQuad(port2.texture, wallPos- 0.001, -5,0.001,-Math.PI/2);
+	port1_quad.name = "portal1";
+	port2_quad.name = "portal2";
+	console.log(port1_quad);
 	port1_scene.add(port1_quad);
 	port2_scene.add(port2_quad);
 	
