@@ -37,6 +37,11 @@ function addHangar(scene) {
 	var backWall = createWall(0x1436e1, wallSize);
 	backWall.position.set(0, 0, -wallPos);
 	hangar.add(backWall);
+
+	var frontWall = createWall(0x1436e1, wallSize);
+	frontWall.position.set(0, 0, wallPos);
+	frontWall.rotation.set(0, halfPi*2, 0);
+	hangar.add(frontWall);
 	
 	var ceiling = createWall(0x00ffff, wallSize);
 	ceiling.position.set(0, wallPos, 0);
@@ -78,7 +83,7 @@ function createWall(colorCode, wallSize) {
 	//TODO: replace for other things too, make our light work with it
 	var material = new THREE.MeshPhongMaterial({ color: colorCode, specular: 0x555555, shininess: 30 });
 	var wall     = new THREE.Mesh(geometry, material);
-	
+	wall.name 	 = "wall";
 	return wall;
 }
 

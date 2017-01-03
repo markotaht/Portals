@@ -1,5 +1,8 @@
 //Muutujad, mingit hetk tuleb üle vaadata
 var renderer, scene, camera, port1_scene, port2_scene;
+var raycaster = new THREE.Raycaster();
+var center = new THREE.Vector2();
+var intersects;
 
 var port1, port2, port1_1,port2_1;
 
@@ -20,7 +23,7 @@ var keyboard = new THREEx.KeyboardState();
 
 
 var wallPos = 20; // seina kaugus 0punktist
-var quadSideLength = 15; // portaali quadi küljepikkus
+var quadSideLength = 10; // portaali quadi küljepikkus
 
 var hangar;
 
@@ -72,7 +75,6 @@ function onLoad() {
 	port1_scene.add(port1_quad);
 	port2_scene.add(port2_quad);
 	
-	
 	createObjects(scene);
 	
 	//textures
@@ -122,6 +124,40 @@ function parseControls(dt) {
 		if (camera.position.y < wallPos) {
 			camera.position.y += 10 * dt % 360;
 		}		
+	}
+	if(keyboard.pressed("z")){ // z tekitab P1
+		port1_quad.position.x = intersects[0].point.x;
+		port1_quad.position.y = intersects[0].point.y;
+		port1_quad.position.z = intersects[0].point.z;
+		port1_quad.translateZ(0.1);
+		if (intersects[0].object.name == "wall") {
+			port1_quad.rotation.x = intersects[0].object.rotation.x;
+			port1_quad.rotation.y = intersects[0].object.rotation.y;
+			port1_quad.rotation.z = intersects[0].object.rotation.z;
+		}
+		else {			
+			var Yaxis = new THREE.Vector3(0,1,0);
+			var pos = new THREE.Vector3();
+			pos.addVectors(intersects[0].face.normal, intersects[0].point);
+			port1_quad.lookAt(pos);
+		}
+	}
+	if(keyboard.pressed("x")){ // x tekitab P2
+		port2_quad.position.x = intersects[0].point.x;
+		port2_quad.position.y = intersects[0].point.y;
+		port2_quad.position.z = intersects[0].point.z;
+		port2_quad.translateZ(0.1);
+		if (intersects[0].object.name == "wall") {
+			port2_quad.rotation.x = intersects[0].object.rotation.x;
+			port2_quad.rotation.y = intersects[0].object.rotation.y;
+			port2_quad.rotation.z = intersects[0].object.rotation.z;
+		}
+		else {			
+			var Yaxis = new THREE.Vector3(0,1,0);
+			var pos = new THREE.Vector3();
+			pos.addVectors(intersects[0].face.normal, intersects[0].point);
+			port2_quad.lookAt(pos);
+		}
 	}
 
 }

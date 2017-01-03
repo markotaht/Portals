@@ -47,8 +47,6 @@ function portal_view(camera, src_portal, dst_portal, kordaja) {
 	return inverse_view_to_source;
 }
 
-
-
 function draw() {
 	requestAnimationFrame(draw);
 
@@ -158,10 +156,20 @@ function draw() {
 	
 	//Joonistame lõpliku stseeni
 	gl.colorMask(true,true,true,true);
+	
+	center.x = (window.innerWidth / (window.innerWidth * 2) ) * 2 - 1;
+	center.y = -(window.innerHeight / (window.innerHeight  * 2) ) * 2 + 1;
+	raycaster.setFromCamera( center, camera );
+
+	// calculate objects intersecting the picking ray
+	intersects = raycaster.intersectObjects( scene.children, true);
+	for ( var i = 0; i < intersects.length; i++ ) {
+		//console.log(intersects[i]);
+		//intersects[ i ].object.material.color.set( 0xff0000 );
+	}
 	renderer.render(scene,camera);
 	
 }
-
 function teleportCam(portal) {
 
 }
