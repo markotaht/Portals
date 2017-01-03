@@ -154,18 +154,28 @@ function draw() {
 	intersects = raycaster.intersectObjects( scene.children, true);
 	intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
 	intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
-	for ( var i = 0; i < intersectsPortals.length; i++ ) {
-		if (intersectsPortals[i].distance < 0.65 && intersectsPortals[i].object.name == "portal1")
-			teleportCam(port2_quad);
-		if (intersectsPortals[i].distance < 0.65 && intersectsPortals[i].object.name == "portal2")
-			teleportCam(port1_quad);
+	var portal = null;
+	if (intersectsPortals.length >= 1) {
+		if (intersectsPortals[0].distance <= 0.6) {
+			if (intersectsPortals[0].object.name == "portal1"){
+				console.log(intersectsPortals[0].object.name);
+				portal = port2_quad;
+			}
+			if (intersectsPortals[0].object.name == "portal2"){
+				console.log(intersectsPortals[0].object.name);
+				portal = port1_quad;
+			}
+			teleportCam(portal);
+		}
 	}
 	renderer.render(scene,camera);
 	
 }
 function teleportCam(portal) {
+	//console.log(portal);
 	camera.position.x = portal.position.x;
 	camera.position.z = portal.position.z;
 	camera.position.y = portal.position.y;
-	camera.rotation.y = -portal.rotation.y;
+	camera.rotation.y = portal.rotation.y + Math.PI;
+	camera.translateZ(1);
 }
