@@ -56,7 +56,7 @@ function draw() {
 	parseControls(dt);
 	
 	var time = clock.getElapsedTime();
-	var m = time / 4;
+	var m = time*0.7;
 	lightPosition = lightTrajectory.getPoint(m - parseInt(m));
 	scene.children[0].position.set(lightPosition.x, lightPosition.y, lightPosition.z);
 	light.set(lightPosition.x,lightPosition.y,lightPosition.z);

@@ -16,7 +16,7 @@ var port1_quad;
 var port2_cam;
 var port2_quad;
 
-var viewerPosition = new THREE.Vector3(0.0, 0.0, 15.0);
+var viewerPosition = new THREE.Vector3(0.0, 0.0, 45.0);
 
 var clock = new THREE.Clock();
 var keyboard = new THREEx.KeyboardState();		
@@ -43,24 +43,24 @@ function onLoad() {
 	port1_scene = new THREE.Scene();
 	port2_scene = new THREE.Scene();
 	
-	camera = new THREE.PerspectiveCamera(80, width / height, 1, 1000);
+	camera = new THREE.PerspectiveCamera(80, width / height, 1, 200);
 	camera.position.set(viewerPosition.x, viewerPosition.y, viewerPosition.z);
 	camera.up = new THREE.Vector3(0, 0, -1);
 	camera.lookAt(new THREE.Vector3(0,0,0));
 	
 	//Valguse liikumine
 	lightTrajectory = new THREE.CatmullRomCurve3([
-		new THREE.Vector3(-5, -7, 5 ),
-		new THREE.Vector3(-4, -7, -2 ),
-		new THREE.Vector3( 3, -7, -4 ),
-		new THREE.Vector3( 8, -7, 6 ),
+		new THREE.Vector3(-20, -12, 8 ),
+		new THREE.Vector3(-13, -7, -8 ),
+		new THREE.Vector3( 12, 20, -20 ),
+		new THREE.Vector3( 8, -7, 40 ),
 	]);
 	lightTrajectory.closed = true;
 	light = new THREE.Vector3();
 	
 	//Light so that walls with phong material could be seen
 	//TODO: combine with our light
-	var plight = new THREE.PointLight( 0xffffff, 1, 100 );
+	var plight = new THREE.PointLight( 0xffffff, 1, 1000 );
 	plight.position.set(10, 1, 15);
 	scene.add(plight);
 	

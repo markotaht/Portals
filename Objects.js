@@ -10,7 +10,7 @@ function createObjects(scene){
 	for (var i = 0; i < 10; i++) {
 		var sphere = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32),
 					new THREE.MeshPhongMaterial({ color: '#'+(Math.random()*0xFFFFFF<<0).toString(16), specular: 0x555555, shininess: 30 }));
-		cube.position.set(randInt(-50,40), randInt(-10,20), randInt(-40,50));
+		sphere.position.set(randInt(-50,40), randInt(-10,20), randInt(-40,50));
 		sphere.scale.set(randInt(1,2), randInt(1,2), randInt(1,2));
 		randomObjects.add(sphere);		
 	}
