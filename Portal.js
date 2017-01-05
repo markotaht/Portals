@@ -1,3 +1,80 @@
+//Teha protaal objektiks. Vajab veel arendust
+var Portal = function(x,y,z,rot){
+	this.texture1 = null;
+	this.texture2 = null;
+	this.position = new THREE.Vector3(x,y,z);
+	this.rot = rot;
+	this.otherPortal = null
+	//Luua siia vastav object
+	this.quad = null;
+}
+
+Portal.prototype.createBoundPortal = function(x,y,z,rot){
+	this.otherPortal = new Portal(x,y,z,rot);
+	this.otherPortal.otherPortal = this;
+	return this.otherPortal;
+}
+
+Portal.prototype.newPosition = function(x,y,z,rot){
+	this.position = new THREE.Vector3(x,y,z);
+	this.rot = rot;
+	this.quad.position = this.position;
+}
+/*
+Portal.prototype.portal_view = function(camera){
+	this.quad.updateMatrixWorld();
+	this.otherPortal.quad.updateMatrixWorld();
+	camera.updateMatrixWorld();
+	
+	var camerapos = new THREE.Vector3();
+	var camerarot = new THREE.Quaternion();
+	var camerascale = new THREE.Vector3();
+	camera.matrix.decompose(camerapos,camerarot,camerascale);
+	
+	var srcpos = new THREE.Vector3();
+	var srcquat = new THREE.Quaternion();
+	var srcscale = new THREE.Vector3();
+	this.quad.matrix.decompose(srcpos, srcquat, srcscale);
+	
+	var destquat = new THREE.Quaternion();
+	var destpos = new THREE.Vector3();
+	var destscale = new THREE.Vector3();
+	this.otherPortal.quad.matrix.decompose(destpos,destquat,destscale);
+	
+	var diff = camerapos.clone().sub(srcpos);
+	
+	
+	//IF ortation between2 portals is 180 its all ok
+	//any other and we need to rotate
+
+	var ydiff = src_portal.rotation.y - dst_portal.rotation.y - Math.PI;
+	diff.applyAxisAngle(new THREE.Vector3(0,1,0),-ydiff);
+	var newcampos = diff.add(destpos);
+	var yrotvec = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-ydiff);
+	srcquat = srcquat.multiply(destquat.inverse());
+	camerarot = camerarot.multiply(yrotvec);
+	
+	var inverse_view_to_source = new THREE.Matrix4();
+	inverse_view_to_source.compose(newcampos,camerarot,camerascale);
+	
+	// http://www.terathon.com/lengyel/Lengyel-Oblique.pdf Siit saada kuidagi oblique fusrum culling.
+	var M3 = new THREE.Vector4(camera.projectionMatrix.elements[2], camera.projectionMatrix.elements[6],camera.projectionMatrix.elements[10],camera.projectionMatrix.elements[14]);
+		
+	var M4 = new THREE.Vector4(camera.projectionMatrix.elements[3], camera.projectionMatrix.elements[7],camera.projectionMatrix.elements[11],camera.projectionMatrix.elements[15]);
+	
+	var nomalMatrix = new THREE.Matrix3().getNormalMatrix(this.quad.matrixWorld);
+	var normal = new THREE.Vector3().applyMatrix3(normalMatrix).normalize();
+	var clipPlane = new Vector4(normal.x,normal.y,normal.z,normal.clone().inverse().dot(this.position));
+	var Cp = new THREE.Matrix4().getInverse(camera.projectionMatrix).transpose().multiply(clipPlane);
+	var Qp = new THREE.Vector4(Cp.x,Cp.y,1,1);
+	var Q = new THREE.Matrix4().getInverse(camera.projectionMatrix).multiply(Qp);
+	var a = M4.clone().multiply(2).dot(Q).divide(clipPlane.clone().dot(Q));
+	
+	//See panna projections maatrixi 3 reaks.
+	var M3p = clipPlane.clone().multiply(a).sub(M4);
+	return inverse_view_to_source;
+}
+*/
 function portal_view(camera, src_portal, dst_portal, kordaja) {
 	//TODO Kogu see matemaatika siin paneb segast. Leida parem lahendus. 
 	//Eesmärk: liigutada kaamera õigesse kohta et portaalist oleks näha õiget objekti.
@@ -39,11 +116,25 @@ function portal_view(camera, src_portal, dst_portal, kordaja) {
 	inverse_view_to_source.compose(newcampos,camerarot,camerascale);
 	
 	// http://www.terathon.com/lengyel/Lengyel-Oblique.pdf Siit saada kuidagi oblique fusrum culling.
+	//Siin kusagil on mingi matemaatika katki.
 	var M3 = new THREE.Vector4(camera.projectionMatrix.elements[2], camera.projectionMatrix.elements[6],camera.projectionMatrix.elements[10],camera.projectionMatrix.elements[14]);
 		
 	var M4 = new THREE.Vector4(camera.projectionMatrix.elements[3], camera.projectionMatrix.elements[7],camera.projectionMatrix.elements[11],camera.projectionMatrix.elements[15]);
 	
+	var normalMatrix = new THREE.Matrix3().getNormalMatrix(dst_portal.matrixWorld);
+	var normal = new THREE.Vector3(0, 0, 1).applyMatrix3(normalMatrix).normalize();
+	var clipPlane = new THREE.Vector4(normal.x, normal.y, normal.z, normal.clone().negate().dot(destpos));
+	var Cp = clipPlane.clone().applyMatrix4(new THREE.Matrix4().getInverse(camera.projectionMatrix).transpose());
+	var Qp = new THREE.Vector4(Cp.x, Cp.y, 1, 1);
+	var Q = Qp.clone().applyMatrix4(new THREE.Matrix4().getInverse(camera.projectionMatrix));
+	var a = M4.clone().multiplyScalar(2).dot(Q) / clipPlane.clone().dot(Q);
 	
+	//See panna projections maatrixi 3 reaks.
+	var M3p = clipPlane.clone().multiplyScalar(a).sub(M4);
+	camera.projectionMatrix.elements[2] = M3p.x;
+	camera.projectionMatrix.elements[6] = M3p.y;
+	camera.projectionMatrix.elements[10] = M3p.z;
+	camera.projectionMatrix.elements[14] = M3p.w;
 	return inverse_view_to_source;
 }
 
@@ -77,6 +168,7 @@ function draw() {
 	
 	camera.updateMatrixWorld();
 	original_mat = camera.matrixWorld.clone();
+	var original_proj = camera.projectionMatrix.clone();
 	
 	var gl = renderer.context;
 	
@@ -120,7 +212,8 @@ function draw() {
 	gl.stencilFunc(gl.EQUAL,2,0xff);
 	
 	gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP);
-	camera.matrixWorld = original_mat;
+	camera.matrixWorld = original_mat.clone();
+	camera.projectionMatrix = original_proj.clone();
 	camera.matrixWorld = portal_view(camera,port2_quad,port1_quad,-1);
 	renderer.render(scene,camera);
 	
@@ -130,6 +223,7 @@ function draw() {
 	
 	//Paneme kaamera tagai algesse kohta
 	camera.matrixWorld = original_mat.clone();
+	camera.projectionMatrix = original_proj.clone();
 	camera.matrixAutoUpdate = true;
 	
 	//Tühjendame sügavuspuhvri

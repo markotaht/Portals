@@ -14,7 +14,12 @@ function createObjects(scene){
 		sphere.scale.set(randInt(1,2), randInt(1,2), randInt(1,2));
 		randomObjects.add(sphere);		
 	}
-
+	
+	var cube = createCube(0xFFFFFF); //new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), createShaderMaterial(new THREE.Color(0x3DE5CF)));
+		cube.position.set(randInt(-40,-40), randInt(-30,20), -80);
+		cube.scale.set(5,5,5);
+		randomObjects.add(cube);
+		
 	randomObjects.position.set(0, 0, 0);
 	scene.add(randomObjects);
 }
