@@ -26,32 +26,41 @@ function addHangar(scene) {
 	var halfPi = Math.PI / 2;
 	//var wallPos = 20;
 	var wallSize = 2*wallPos;
+	var beige = 0xf9dd87;
+	var light_gray = 0xe2e1de;
+	var brown = 0x8b2800;
 	
-	var leftWall = createWall(0x47d147, wallSize);
+	var leftWall = createWall(beige, wallSize);
+	leftWall.name = "leftWall";
 	leftWall.position.set(-wallPos, 0, 0);
 	leftWall.rotation.set(0, halfPi, 0);
 	hangar.add(leftWall);
 	
-	var rightWall = createWall(0xff00ff, wallSize);
+	var rightWall = createWall(beige, wallSize);
+	rightWall.name = "rightWall";
 	rightWall.position.set(wallPos, 0, 0);
 	rightWall.rotation.set(0, -halfPi, 0);
 	hangar.add(rightWall);
 	
-	var backWall = createWall(0x1436e1, wallSize);
+	var backWall = createWall(beige, wallSize);
+	backWall.name = "backWall";
 	backWall.position.set(0, 0, -wallPos);
 	hangar.add(backWall);
 
-	var frontWall = createWall(0x1436e1, wallSize);
+	var frontWall = createWall(beige, wallSize);
+	frontWall.name = "frontWall";
 	frontWall.position.set(0, 0, wallPos);
 	frontWall.rotation.set(0, halfPi*2, 0);
 	hangar.add(frontWall);
 	
-	var ceiling = createWall(0x00ffff, wallSize);
+	var ceiling = createWall(light_gray, wallSize);
+	ceiling.name = "ceiling";
 	ceiling.position.set(0, wallPos, 0);
 	ceiling.rotation.set(halfPi, 0, 0);
 	hangar.add(ceiling);
 	
-	var floor = createWall(0xffff00, wallSize);
+	var floor = createWall(brown, wallSize);
+	floor.name = "floor";
 	floor.position.set(0, -wallPos, 0);
 	floor.rotation.set(-halfPi, 0, 0);
 	hangar.add(floor);

@@ -72,8 +72,8 @@ function onLoad() {
 	port1_1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
 	port2_1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
 	
-	port1_quad = addQuad(port1.texture, -wallPos+0.001,-5,0.001, Math.PI/2);
-	port2_quad = addQuad(port2.texture, wallPos- 0.001, -5,0.001,-Math.PI/2);
+	port1_quad = addQuad(port1.texture, -wallPos+0.005,-5,0.005, Math.PI/2);
+	port2_quad = addQuad(port2.texture, wallPos- 0.005, -5,0.005,-Math.PI/2);
 	port1_quad.name = "portal1";
 	port2_quad.name = "portal2";
 	port1_scene.add(port1_quad);
@@ -87,11 +87,11 @@ function onLoad() {
 										//Local files do not work unless you have a web server running.
 	loader.setPath('http://cglearn.codelight.eu/files/course/7/textures/');
 
-	loader.load('wallTexture.jpg', onTextureLoaded);
-	loader.load('ut256.png', onTextureLoaded);
-	loader.load('wallTexture2.jpg', onTextureLoaded);
-	loader.load('stripeTexture.png', onTextureLoaded);
-	loader.load('sasuke256.png', onTextureLoaded);
+	loader.load('wallTexture.jpg', function(tex){onTextureLoaded(tex,"wall")});
+	loader.load('ut256.png', function(tex){onTextureLoaded(tex,"ut")});
+	loader.load('wallTexture2.jpg', function(tex){onTextureLoaded(tex,"wall2")});
+	loader.load('stripeTexture.png', function(tex){onTextureLoaded(tex,"stripe")});
+	loader.load('sasuke256.png', function(tex){onTextureLoaded(tex,"sasuke")});
 }
 
 
