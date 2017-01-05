@@ -91,8 +91,6 @@ function createQuad(texture) {
 function createWall(colorCode, wallSize) {
 	var geometry = new THREE.PlaneGeometry(wallSize, wallSize, 1);
 	var color    = new THREE.Color(colorCode);
-	//Replaced our custom material with phong
-	//TODO: replace for other things too, make our light work with it
 	var material = new THREE.MeshPhongMaterial({ color: colorCode, specular: 0x555555, shininess: 30 });
 	var wall     = new THREE.Mesh(geometry, material);
 	wall.name 	 = "wall";
