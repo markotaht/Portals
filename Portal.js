@@ -294,21 +294,7 @@ function draw() {
 	var m = time*0.7;
 	lightPosition = lightTrajectory.getPoint(m - parseInt(m));
 	scene.children[0].position.set(lightPosition.x, lightPosition.y, lightPosition.z);
-	light.set(lightPosition.x,lightPosition.y,lightPosition.z);
-	
-	if (camera.position.x > wallPos-0.5) {
-		camera.position.x -= 0.25;
-	}
-	else if (camera.position.x < -wallPos+0.5) {
-		camera.position.x += 0.25;
-	}
-	// labane kontroll, mis ei lase kaameral hangaarist välja minna
-	if (camera.position.z > wallPos) {
-		camera.position.z -= 0.25;
-	}
-	else if (camera.position.z < -wallPos) {
-		camera.position.z += 0.25;
-	}			
+	light.set(lightPosition.x,lightPosition.y,lightPosition.z);		
 	
 	camera.updateMatrixWorld();
 	original_mat = camera.matrixWorld.clone();
@@ -365,7 +351,7 @@ function draw() {
 	gl.disable(gl.STENCIL_TEST);
 	renderer.clear(false,false,true);
 	
-	//Paneme kaamera tagai algesse kohta
+	//Paneme kaamera tagasi algesse kohta
 	camera.matrixWorld = original_mat.clone();
 	camera.projectionMatrix = original_proj.clone();
 	camera.matrixAutoUpdate = true;
@@ -387,17 +373,25 @@ function draw() {
 	
 	center.x = (window.innerWidth / (window.innerWidth * 2) ) * 2 - 1;
 	center.y = -(window.innerHeight / (window.innerHeight  * 2) ) * 2 + 1;
-	raycaster.setFromCamera( center, camera );
+	
+
 
 	// kasutame raycasterit, et leida objektidega lõikumised
-	intersects = raycaster.intersectObjects( scene.children, true);
-	intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
-	intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
+	raycasterCam.setFromCamera( center, camera );
+	intersects = raycasterCam.intersectObjects(scene.children, true);
+	var intersectsObjects;
+	//intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
+	//intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
+	var collisions;
 	var portal;
 	var rotationDiff;
 	var position;
-	if (intersectsPortals.length >= 1) {
-		if (intersectsPortals[0].distance <= 0.7) {
+   	for (var i = 0; i < rays.length; i++) {
+      	// anname raycasterile kiire suuna
+      	raycaster.set(camera.position, rays[i]);
+		intersectsPortals = raycaster.intersectObjects(port1_scene.children, true);
+		intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects(port2_scene.children, true));
+      	if (intersectsPortals.length > 0 && intersectsPortals[0].distance <= 0.25) {
 			if (intersectsPortals[0].object.name == "portal1"){
 				console.log(intersectsPortals[0].object.name);
 				portal = port2_quad;
@@ -410,19 +404,24 @@ function draw() {
 				rotationDiff = camera.rotation.y - port2_quad.rotation.y;
 				position = new THREE.Vector3().copy(camera.position).sub(port2_quad.position);
 			}
-			camera.translateZ(0.7);
-			teleportCam(portal, rotationDiff, position);
-		}
-	}
+			if(time - teleportTime > 1){
+				camera.translateOnAxis(liikumisVektor, 2);
+				teleportTime = time;
+				teleportCam(portal, rotationDiff, position, liikumisVektor);     
+			} 		
+      	}
+    }
+
 	camera.matrixAutoUpdate = true;
 //	camera.matrixWorld = portal_view(camera,port1_quad,port2_quad,1);
 	renderer.render(scene,camera);
 	
 }
-function teleportCam(portal, rotation, position) {
+function teleportCam(portal, rotation, position, liikumisvektor) {
 	//console.log(portal);
 	var pos = portal.position;
 	camera.position.set(pos.x + position.x, pos.y + position.y, pos.z + position.z);
 	camera.rotation.y = portal.rotation.y + Math.PI + rotation;
-	camera.translateZ(1);
+	liikumisvektor.applyAxisAngle(new THREE.Vector3(0,1,0), camera.rotation.y - Math.PI);
+	camera.translateOnAxis(liikumisvektor, 2);
 }

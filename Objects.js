@@ -87,7 +87,7 @@ function addQuad(texture, x, y, z, roty) {
 
 function createQuad(texture) {
 	var geometry = new THREE.PlaneGeometry(quadSideLength, quadSideLength, 1);
-	var material = new THREE.MeshPhongMaterial({ map:texture, specular: 0x555555, shininess: 30 });
+	var material = new THREE.MeshPhongMaterial({ map:texture, specular: 0x555555, shininess: 30});
 	var wall     = new THREE.Mesh(geometry, material);
 	
 	return wall;
