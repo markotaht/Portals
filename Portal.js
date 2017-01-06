@@ -3,10 +3,13 @@ var Portal = function(x,y,z,rot){
 	this.texture1 = null;
 	this.texture2 = null;
 	this.position = new THREE.Vector3(x,y,z);
+	//Vajab veel mõtlemist
 	this.rot = rot;
 	this.otherPortal = null
 	//Luua siia vastav object
 	this.quad = null;
+	//Ilmselt tuleb siia teha portaali stseen. 
+	this.scene = null;
 }
 
 Portal.prototype.createBoundPortal = function(x,y,z,rot){
@@ -20,7 +23,15 @@ Portal.prototype.newPosition = function(x,y,z,rot){
 	this.rot = rot;
 	this.quad.position = this.position;
 }
-/*
+
+Portal.prototype.teleportCam = function(portal, camera) {
+	camera.position.x = portal.position.x;
+	camera.position.z = portal.position.z;
+	camera.position.y = portal.position.y;
+	camera.rotation.y = portal.rotation.y + Math.PI;
+	camera.translateZ(1);
+}
+
 Portal.prototype.portal_view = function(camera){
 	this.quad.updateMatrixWorld();
 	this.otherPortal.quad.updateMatrixWorld();
@@ -57,24 +68,143 @@ Portal.prototype.portal_view = function(camera){
 	var inverse_view_to_source = new THREE.Matrix4();
 	inverse_view_to_source.compose(newcampos,camerarot,camerascale);
 	
-	// http://www.terathon.com/lengyel/Lengyel-Oblique.pdf Siit saada kuidagi oblique fusrum culling.
-	var M3 = new THREE.Vector4(camera.projectionMatrix.elements[2], camera.projectionMatrix.elements[6],camera.projectionMatrix.elements[10],camera.projectionMatrix.elements[14]);
+	// http://www.terathon.com/lengyel/Lengyel-Oblique.pdf Siit saada kuidagi oblique frustum culling.
+	//Siin kusagil on mingi matemaatika katki.
+	var M3 = new THREE.Vector4(
+			camera.projectionMatrix.elements[2], 
+			camera.projectionMatrix.elements[6],
+			camera.projectionMatrix.elements[10],
+			camera.projectionMatrix.elements[14]
+			);
 		
-	var M4 = new THREE.Vector4(camera.projectionMatrix.elements[3], camera.projectionMatrix.elements[7],camera.projectionMatrix.elements[11],camera.projectionMatrix.elements[15]);
+	var M4 = new THREE.Vector4(
+			camera.projectionMatrix.elements[3], 
+			camera.projectionMatrix.elements[7],
+			camera.projectionMatrix.elements[11],
+			camera.projectionMatrix.elements[15]
+			);
 	
-	var nomalMatrix = new THREE.Matrix3().getNormalMatrix(this.quad.matrixWorld);
-	var normal = new THREE.Vector3().applyMatrix3(normalMatrix).normalize();
-	var clipPlane = new Vector4(normal.x,normal.y,normal.z,normal.clone().inverse().dot(this.position));
-	var Cp = new THREE.Matrix4().getInverse(camera.projectionMatrix).transpose().multiply(clipPlane);
-	var Qp = new THREE.Vector4(Cp.x,Cp.y,1,1);
-	var Q = new THREE.Matrix4().getInverse(camera.projectionMatrix).multiply(Qp);
-	var a = M4.clone().multiply(2).dot(Q).divide(clipPlane.clone().dot(Q));
+	var normal = new THREE.Vector3(0, 0, 1).applyQuaternion(srcquat);
+	var clipPlane = new THREE.Vector4(normal.x, normal.y, normal.z, srcpos.length());
+	clipPlane.applyMatrix4(new THREE.Matrix4().getInverse(camera.matrixWorldInverse.clone().transpose()));
+	if(clipPlane.w > 0){
+		return inverse_view_to_source;
+	}
+	var Q = new THREE.Vector4(Math.sign(clipPlane.x), Math.sign(clipPlane.y), 1, 1)
+		.applyMatrix4(new THREE.Matrix4().getInverse(camera.projectionMatrix.clone()));
+	var a = 2/ clipPlane.clone().dot(Q);
 	
 	//See panna projections maatrixi 3 reaks.
-	var M3p = clipPlane.clone().multiply(a).sub(M4);
+	var M3p = clipPlane.clone().multiplyScalar(a).sub(M4);
+	camera.projectionMatrix.elements[2] = M3p.x;
+	camera.projectionMatrix.elements[6] = M3p.y;
+	camera.projectionMatrix.elements[10] = M3p.z;
+	camera.projectionMatrix.elements[14] = M3p.w;
 	return inverse_view_to_source;
 }
-*/
+
+//Render logic for portals. Needs to be called only on 1 portal. draw call on one will also render its partner.
+Portal.prototype.draw = function(camera){
+	camera.updateMatrixWorld();
+	original_mat = camera.matrixWorld.clone();
+	var original_proj = camera.projectionMatrix.clone();
+	
+	var gl = renderer.context;
+	
+	//Mõelda mida teha portaali stseeniga...
+	
+	//Puhastame kõik buffrid ära
+	renderer.autoClear = false;
+	renderer.clear(true,true,true);
+	
+	//Valmistame stencli
+	gl.stencilOp(gl.KEEP,gl.KEEP,gl.REPLACE);
+	gl.stencilMask(0xff);
+	
+	gl.colorMask(false,false,false,false);
+	gl.depthMask(false);
+	
+	gl.enable(gl.STENCIL_TEST);
+	gl.enable(gl.DEPTH_TEST);
+	
+	//Portaal 1 stenclisse
+	gl.stencilFunc(gl.ALWAYS,1,0xff);
+	renderer.render(port1_scene,camera);
+	
+	//Portaal 2 stenclisse
+	gl.stencilFunc(gl.ALWAYS,2,0xff);
+	renderer.render(port2_scene,camera);
+	
+	renderer.clear(false,true,false);
+	
+	gl.colorMask(true,true,true,true);
+	gl.depthMask(true);
+	camera.matrixAutoUpdate = false;
+	
+	//Joonistame esimese protaali vaate
+	gl.stencilFunc(gl.EQUAL,1,0xff);
+	
+	gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP);
+	
+	camera.matrixWorld = this.portal_view(camera);
+	renderer.render(scene,camera);
+
+	//Joonistame teise portaali vaate
+	gl.stencilFunc(gl.EQUAL,2,0xff);
+	
+	gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP);
+	camera.matrixWorld = original_mat.clone();
+	camera.projectionMatrix = original_proj.clone();
+	camera.matrixWorld = this.other.portal_view(camera);
+	renderer.render(scene,camera);
+	
+	//Aitab stenclist
+	gl.disable(gl.STENCIL_TEST);
+	renderer.clear(false,false,true);
+	
+	//Paneme kaamera tagai algesse kohta
+	camera.matrixWorld = original_mat.clone();
+	camera.projectionMatrix = original_proj.clone();
+	camera.matrixAutoUpdate = true;
+	
+	//Tühjendame sügavuspuhvri
+	renderer.clear(false,true,false);
+	
+	
+	//Joonistame mõlemad portaalid sügavus buffrisse
+	// Et neid üle ei kirjutataks
+	gl.colorMask(false,false,false,false);
+	gl.depthMask(true);
+	renderer.render(port1_scene,camera);
+	renderer.render(port2_scene,camera);
+	gl.enable(gl.DEPTH_TEST);
+	
+	//Joonistame lõpliku stseeni
+	gl.colorMask(true,true,true,true);
+	
+	center.x = (window.innerWidth / (window.innerWidth * 2) ) * 2 - 1;
+	center.y = -(window.innerHeight / (window.innerHeight  * 2) ) * 2 + 1;
+	raycaster.setFromCamera( center, camera );
+
+	// kasutame raycasterit, et leida objektidega lõikumised
+	intersects = raycaster.intersectObjects( scene.children, true);
+	intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
+	intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
+	var portal = null;
+	if (intersectsPortals.length >= 1) {
+		if (intersectsPortals[0].distance <= 0.7) {
+			if (intersectsPortals[0].object.name == "portal1"){
+				console.log(intersectsPortals[0].object.name);
+				portal = port2_quad;
+			}
+			if (intersectsPortals[0].object.name == "portal2"){
+				console.log(intersectsPortals[0].object.name);
+				portal = port1_quad;
+			}
+			this.teleportCam(portal,camera);
+		}
+	}
+}
 function portal_view(camera, src_portal, dst_portal, kordaja) {
 	//TODO Kogu see matemaatika siin paneb segast. Leida parem lahendus. 
 	//Eesmärk: liigutada kaamera õigesse kohta et portaalist oleks näha õiget objekti.
@@ -150,6 +280,8 @@ function portal_view(camera, src_portal, dst_portal, kordaja) {
 	return inverse_view_to_source;
 }
 
+//Selle võiks peita nt portal objekti sisse. SIis on lihtsalt portal.draw() ja pärast otsa tavaline scene renderdus. Siis jääb kogu protaali loogika
+//ilusti portaali objekti sisse
 function draw() {
 	requestAnimationFrame(draw);
 
