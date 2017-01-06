@@ -291,10 +291,12 @@ function draw() {
 	parseControls(dt);
 	
 	var time = clock.getElapsedTime();
-	var m = time*0.7;
+	var m = time*0.3;
 	lightPosition = lightTrajectory.getPoint(m - parseInt(m));
 	scene.children[0].position.set(lightPosition.x, lightPosition.y, lightPosition.z);
-	light.set(lightPosition.x,lightPosition.y,lightPosition.z);		
+	lamp.position.set(lightPosition.x, lightPosition.y, lightPosition.z);
+	lampchain.geometry.vertices[1] = new THREE.Vector3(lightPosition.x, lightPosition.y, lightPosition.z);
+	lampchain.geometry.verticesNeedUpdate = true;
 	
 	camera.updateMatrixWorld();
 	original_mat = camera.matrixWorld.clone();

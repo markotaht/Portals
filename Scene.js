@@ -10,6 +10,7 @@ var port1, port2, port1_1,port2_1;
 var lightPosition;
 var light;
 var lightTrajectory;
+var plight;
 
 var port1_cam;
 var port1_quad;
@@ -69,17 +70,17 @@ function onLoad() {
 	
 	//Valguse liikumine
 	lightTrajectory = new THREE.CatmullRomCurve3([
-		new THREE.Vector3(-20, -12, 8 ),
-		new THREE.Vector3(-13, -7, -8 ),
+		new THREE.Vector3(-20, 8, 8 ),
+		new THREE.Vector3(-13, 23, -8 ),
 		new THREE.Vector3( 12, 20, -20 ),
-		new THREE.Vector3( 8, -7, 40 ),
+		new THREE.Vector3( 8, 13, 20 ),
 	]);
 	lightTrajectory.closed = true;
 	light = new THREE.Vector3();
 	
 	//Light so that walls with phong material could be seen
 	//TODO: combine with our light
-	var plight = new THREE.PointLight( 0xffffff, 1, 1000 );
+	plight = new THREE.PointLight( 0xffffff, 1, 1000 );
 	plight.position.set(10, 1, 15);
 	scene.add(plight);
 	
