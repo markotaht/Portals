@@ -63,7 +63,7 @@ function onLoad() {
 	port1_scene = new THREE.Scene();
 	port2_scene = new THREE.Scene();
 	
-	camera = new THREE.PerspectiveCamera(80, width / height, 1, 200);
+	camera = new THREE.PerspectiveCamera(80, width / height, 1, 500);
 	camera.position.set(viewerPosition.x, viewerPosition.y, viewerPosition.z);
 	camera.up = new THREE.Vector3(0, 0, -1);
 	camera.lookAt(new THREE.Vector3(0,0,0));
