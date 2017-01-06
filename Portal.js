@@ -115,19 +115,31 @@ function portal_view(camera, src_portal, dst_portal, kordaja) {
 	var inverse_view_to_source = new THREE.Matrix4();
 	inverse_view_to_source.compose(newcampos,camerarot,camerascale);
 	
-	// http://www.terathon.com/lengyel/Lengyel-Oblique.pdf Siit saada kuidagi oblique fusrum culling.
+	// http://www.terathon.com/lengyel/Lengyel-Oblique.pdf Siit saada kuidagi oblique frustum culling.
 	//Siin kusagil on mingi matemaatika katki.
-	var M3 = new THREE.Vector4(camera.projectionMatrix.elements[2], camera.projectionMatrix.elements[6],camera.projectionMatrix.elements[10],camera.projectionMatrix.elements[14]);
+	var M3 = new THREE.Vector4(
+			camera.projectionMatrix.elements[2], 
+			camera.projectionMatrix.elements[6],
+			camera.projectionMatrix.elements[10],
+			camera.projectionMatrix.elements[14]
+			);
 		
-	var M4 = new THREE.Vector4(camera.projectionMatrix.elements[3], camera.projectionMatrix.elements[7],camera.projectionMatrix.elements[11],camera.projectionMatrix.elements[15]);
+	var M4 = new THREE.Vector4(
+			camera.projectionMatrix.elements[3], 
+			camera.projectionMatrix.elements[7],
+			camera.projectionMatrix.elements[11],
+			camera.projectionMatrix.elements[15]
+			);
 	
-	var normalMatrix = new THREE.Matrix3().getNormalMatrix(dst_portal.matrixWorld);
-	var normal = new THREE.Vector3(0, 0, 1).applyMatrix3(normalMatrix).normalize();
-	var clipPlane = new THREE.Vector4(normal.x, normal.y, normal.z, normal.clone().negate().dot(destpos));
-	var Cp = clipPlane.clone().applyMatrix4(new THREE.Matrix4().getInverse(camera.projectionMatrix).transpose());
-	var Qp = new THREE.Vector4(Cp.x, Cp.y, 1, 1);
-	var Q = Qp.clone().applyMatrix4(new THREE.Matrix4().getInverse(camera.projectionMatrix));
-	var a = M4.clone().multiplyScalar(2).dot(Q) / clipPlane.clone().dot(Q);
+	var normal = new THREE.Vector3(0, 0, 1).applyQuaternion(srcquat);
+	var clipPlane = new THREE.Vector4(normal.x, normal.y, normal.z, srcpos.length());
+	clipPlane.applyMatrix4(new THREE.Matrix4().getInverse(camera.matrixWorldInverse.clone().transpose()));
+	if(clipPlane.w > 0){
+		return inverse_view_to_source;
+	}
+	var Q = new THREE.Vector4(Math.sign(clipPlane.x), Math.sign(clipPlane.y), 1, 1)
+		.applyMatrix4(new THREE.Matrix4().getInverse(camera.projectionMatrix.clone()));
+	var a = 2/ clipPlane.clone().dot(Q);
 	
 	//See panna projections maatrixi 3 reaks.
 	var M3p = clipPlane.clone().multiplyScalar(a).sub(M4);
@@ -263,6 +275,8 @@ function draw() {
 			teleportCam(portal);
 		}
 	}
+	camera.matrixAutoUpdate = true;
+//	camera.matrixWorld = portal_view(camera,port1_quad,port2_quad,1);
 	renderer.render(scene,camera);
 	
 }
