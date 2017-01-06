@@ -263,7 +263,7 @@ function portal_view(camera, src_portal, dst_portal, kordaja) {
 	
 	var normal = new THREE.Vector3(0, 0, 1).applyQuaternion(srcquat);
 	var clipPlane = new THREE.Vector4(normal.x, normal.y, normal.z, srcpos.length());
-	clipPlane.applyMatrix4(new THREE.Matrix4().getInverse(camera.matrixWorldInverse.clone().transpose()));
+	clipPlane.applyMatrix4(new THREE.Matrix4().getInverse(camera.matrixWorldInverse.clone()));
 	if(clipPlane.w > 0){
 		return inverse_view_to_source;
 	}
@@ -412,8 +412,6 @@ function draw() {
       	}
     }
 
-	camera.matrixAutoUpdate = true;
-//	camera.matrixWorld = portal_view(camera,port1_quad,port2_quad,1);
 	renderer.render(scene,camera);
 	
 }

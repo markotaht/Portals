@@ -17,7 +17,7 @@ var port1_quad;
 var port2_cam;
 var port2_quad;
 
-var PORT_SCALE_MAX = 2.0;
+var PORT_SCALE_MAX = 5.0;
 var PORT_SCALE_MIN = 0.5;
 
 var viewerPosition = new THREE.Vector3(0.0, 0.0, 45.0);
