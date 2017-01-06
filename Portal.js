@@ -393,18 +393,25 @@ function draw() {
 	intersects = raycaster.intersectObjects( scene.children, true);
 	intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
 	intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
-	var portal = null;
+	var portal;
+	var rotationDiff;
+	var position;
 	if (intersectsPortals.length >= 1) {
 		if (intersectsPortals[0].distance <= 0.7) {
 			if (intersectsPortals[0].object.name == "portal1"){
 				console.log(intersectsPortals[0].object.name);
 				portal = port2_quad;
+				rotationDiff = camera.rotation.y - port1_quad.rotation.y;
+				position = new THREE.Vector3().copy(camera.position).sub(port1_quad.position);
 			}
 			if (intersectsPortals[0].object.name == "portal2"){
 				console.log(intersectsPortals[0].object.name);
 				portal = port1_quad;
+				rotationDiff = camera.rotation.y - port2_quad.rotation.y;
+				position = new THREE.Vector3().copy(camera.position).sub(port2_quad.position);
 			}
-			teleportCam(portal);
+			camera.translateZ(0.7);
+			teleportCam(portal, rotationDiff, position);
 		}
 	}
 	camera.matrixAutoUpdate = true;
@@ -412,11 +419,10 @@ function draw() {
 	renderer.render(scene,camera);
 	
 }
-function teleportCam(portal) {
+function teleportCam(portal, rotation, position) {
 	//console.log(portal);
-	camera.position.x = portal.position.x;
-	camera.position.z = portal.position.z;
-	camera.position.y = portal.position.y;
-	camera.rotation.y = portal.rotation.y + Math.PI;
+	var pos = portal.position;
+	camera.position.set(pos.x + position.x, pos.y + position.y, pos.z + position.z);
+	camera.rotation.y = portal.rotation.y + Math.PI + rotation;
 	camera.translateZ(1);
 }
