@@ -173,7 +173,7 @@ Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, mov
 			
 			renderer.render(scene,camera);
 		}else{
-			this.drawRecursivePortal(camera,gl, level+1,maxlevel,true);
+			this.drawRecursivePortal(camera,gl, level+1,maxlevel,false);
 		}
 		gl.colorMask(false,false,false,false);
 		gl.depthMask(false);
