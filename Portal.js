@@ -131,10 +131,10 @@ Portal.prototype.portal_view = function(camera, move=false){
 	
 	//See panna projections maatrixi 3 reaks.
 	var M3p = clipPlane.clone().multiplyScalar(a).sub(M4);
-//	camera.projectionMatrix.elements[2] = M3p.x;
-//	camera.projectionMatrix.elements[6] = M3p.y;
-//	camera.projectionMatrix.elements[10] = M3p.z;
-//	camera.projectionMatrix.elements[14] = M3p.w;
+	camera.projectionMatrix.elements[2] = M3p.x;
+	camera.projectionMatrix.elements[6] = M3p.y;
+	camera.projectionMatrix.elements[10] = M3p.z;
+	camera.projectionMatrix.elements[14] = M3p.w;
 	return inverse_view_to_source;
 }
 
@@ -181,8 +181,8 @@ Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, mov
 		
 		gl.stencilFunc(gl.NOTEQUAL,level+1,0xFF);
 		gl.stencilOp(gl.DECR, gl.KEEP, gl.KEEP);
-		camera.matrixWorld = original_mat;
-		camera.projectionMatrix = original_proj;
+		camera.matrixWorld = original_mat.clone();
+		camera.projectionMatrix = original_proj.clone();
 		renderer.render(portal.scene,camera);
 	}
 	
@@ -333,6 +333,7 @@ function draw() {
 	renderer.autoClear = false;
 	renderer.clear(true,true,true);
 	camera.updateMatrixWorld();
+	camera.updateProjectionMatrix ();
 	camera.matrixAutoUpdate = false;
 	portal1.drawRecursivePortal(camera,renderer.context,0,3);
 	camera.matrixAutoUpdate = true;
