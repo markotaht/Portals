@@ -7,9 +7,10 @@ var Portal = function(x,y,z,rot){
 	this.rot = rot;
 	this.otherPortal = null
 	//Luua siia vastav object
-	this.quad = null;
+	this.quad = addQuad(null, x,y,z, rot);
 	//Ilmselt tuleb siia teha portaali stseen. 
-	this.scene = null;
+	this.scene = new THREE.Scene();
+	this.scene.add(this.quad);
 }
 
 Portal.prototype.createBoundPortal = function(x,y,z,rot){
@@ -32,25 +33,24 @@ Portal.prototype.teleportCam = function(portal, camera) {
 	camera.translateZ(1);
 }
 
-Portal.prototype.portal_view = function(camera){
+Portal.prototype.portal_view = function(camera, move=false){
 	this.quad.updateMatrixWorld();
-	this.otherPortal.quad.updateMatrixWorld();
-	camera.updateMatrixWorld();
+	this.otherPortal.quad.updateMatrixWorld();	
 	
 	var camerapos = new THREE.Vector3();
 	var camerarot = new THREE.Quaternion();
 	var camerascale = new THREE.Vector3();
-	camera.matrix.decompose(camerapos,camerarot,camerascale);
+	camera.matrixWorld.decompose(camerapos,camerarot,camerascale);
 	
 	var srcpos = new THREE.Vector3();
 	var srcquat = new THREE.Quaternion();
 	var srcscale = new THREE.Vector3();
-	this.quad.matrix.decompose(srcpos, srcquat, srcscale);
+	this.quad.matrixWorld.decompose(srcpos, srcquat, srcscale);
 	
 	var destquat = new THREE.Quaternion();
 	var destpos = new THREE.Vector3();
 	var destscale = new THREE.Vector3();
-	this.otherPortal.quad.matrix.decompose(destpos,destquat,destscale);
+	this.otherPortal.quad.matrixWorld.decompose(destpos,destquat,destscale);
 	
 	var diff = camerapos.clone().sub(srcpos);
 	
@@ -58,12 +58,18 @@ Portal.prototype.portal_view = function(camera){
 	//IF ortation between2 portals is 180 its all ok
 	//any other and we need to rotate
 
-	var ydiff = src_portal.rotation.y - dst_portal.rotation.y - Math.PI;
+	var ydiff = this.quad.rotation.y - this.otherPortal.quad.rotation.y - Math.PI;
 	diff.applyAxisAngle(new THREE.Vector3(0,1,0),-ydiff);
-	var newcampos = diff.add(destpos);
-	var yrotvec = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-ydiff);
-	srcquat = srcquat.multiply(destquat.inverse());
-	camerarot = camerarot.multiply(yrotvec);
+	var newcampos;
+	if(!move){
+		newcampos = diff.add(destpos);
+		var yrotvec = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),-ydiff);
+		srcquat = srcquat.multiply(destquat.inverse());
+		camerarot = camerarot.multiply(yrotvec);
+	}else{
+		var mdiff = destpos.clone().sub(srcpos);
+		newcampos = camerapos.clone().add(mdiff);
+	}
 	
 	var inverse_view_to_source = new THREE.Matrix4();
 	inverse_view_to_source.compose(newcampos,camerarot,camerascale);
@@ -96,11 +102,89 @@ Portal.prototype.portal_view = function(camera){
 	
 	//See panna projections maatrixi 3 reaks.
 	var M3p = clipPlane.clone().multiplyScalar(a).sub(M4);
-	camera.projectionMatrix.elements[2] = M3p.x;
-	camera.projectionMatrix.elements[6] = M3p.y;
-	camera.projectionMatrix.elements[10] = M3p.z;
-	camera.projectionMatrix.elements[14] = M3p.w;
+//	camera.projectionMatrix.elements[2] = M3p.x;
+//	camera.projectionMatrix.elements[6] = M3p.y;
+//	camera.projectionMatrix.elements[10] = M3p.z;
+//	camera.projectionMatrix.elements[14] = M3p.w;
 	return inverse_view_to_source;
+}
+
+Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, move=false){
+	var portals = [this, this.otherPortal];
+	var original_mat = camera.matrixWorld.clone();
+	var original_proj = camera.projectionMatrix.clone();
+	for(var i in portals){
+		var portal = portals[i];
+		gl.colorMask(false,false,false,false);
+		gl.depthMask(false);
+		
+		gl.disable(gl.DEPTH_TEST);
+		gl.enable(gl.STENCIL_TEST);
+		
+		gl.stencilFunc(gl.NOTEQUAL,level,0xFF);
+		
+		gl.stencilOp(gl.INCR,gl.KEEP,gl.KEEP);
+		gl.stencilMask(0xFF);
+		
+		renderer.render(portal.scene,camera);
+		camera.matrixWorld = portal.portal_view(camera,move);
+		if(level == maxlevel){
+			gl.colorMask(true, true, true, true);
+			gl.depthMask(true);
+			
+			renderer.clear(false,true,false);
+			gl.enable(gl.DEPTH_TEST);
+			gl.enable(gl.STENCIL_TEST);
+			
+			gl.stencilMask(0x00);
+			
+			gl.stencilFunc(gl.EQUAL,level+1,0xFF);
+			
+			renderer.render(scene,camera);
+		}else{
+			this.drawRecursivePortal(camera,gl, level+1,maxlevel,true);
+		}
+		gl.colorMask(false,false,false,false);
+		gl.depthMask(false);
+		
+		gl.enable(gl.STENCIL_TEST);
+		gl.stencilMask(0xFF);
+		
+		gl.stencilFunc(gl.NOTEQUAL,level+1,0xFF);
+		gl.stencilOp(gl.DECR, gl.KEEP, gl.KEEP);
+		camera.matrixWorld = original_mat;
+		camera.projectionMatrix = original_proj;
+		renderer.render(portal.scene,camera);
+	}
+	
+	gl.disable(gl.STENCIL_TEST);
+	gl.stencilMask(0x00);
+	
+	gl.colorMask(false,false,false,false);
+	
+	gl.enable(gl.DEPTH_TEST);
+	gl.depthMask(true);
+	
+	gl.depthFunc(gl.ALWAYS);
+	
+	renderer.clear(false,true,false);
+	
+	for(var i in portals){
+		renderer.render(portals[i].scene,camera);
+	}
+	
+	gl.depthFunc(gl.LESS);
+	
+	gl.enable(gl.STENCIL_TEST);
+	gl.stencilMask(0x00);
+	
+	gl.stencilFunc(gl.LEQUAL,level,0xff);
+	
+	gl.colorMask(true,true,true,true);
+	gl.depthMask(true);
+	
+	gl.enable(gl.DEPTH_TEST);
+	renderer.render(scene,camera);
 }
 
 //Render logic for portals. Needs to be called only on 1 portal. draw call on one will also render its partner.
@@ -129,11 +213,11 @@ Portal.prototype.draw = function(camera){
 	
 	//Portaal 1 stenclisse
 	gl.stencilFunc(gl.ALWAYS,1,0xff);
-	renderer.render(port1_scene,camera);
+	renderer.render(this.scene,camera);
 	
 	//Portaal 2 stenclisse
 	gl.stencilFunc(gl.ALWAYS,2,0xff);
-	renderer.render(port2_scene,camera);
+	renderer.render(this.otherPortal.scene,camera);
 	
 	renderer.clear(false,true,false);
 	
@@ -145,7 +229,6 @@ Portal.prototype.draw = function(camera){
 	gl.stencilFunc(gl.EQUAL,1,0xff);
 	
 	gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP);
-	
 	camera.matrixWorld = this.portal_view(camera);
 	renderer.render(scene,camera);
 
@@ -155,7 +238,7 @@ Portal.prototype.draw = function(camera){
 	gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP);
 	camera.matrixWorld = original_mat.clone();
 	camera.projectionMatrix = original_proj.clone();
-	camera.matrixWorld = this.other.portal_view(camera);
+	camera.matrixWorld = this.otherPortal.portal_view(camera);
 	renderer.render(scene,camera);
 	
 	//Aitab stenclist
@@ -175,8 +258,8 @@ Portal.prototype.draw = function(camera){
 	// Et neid üle ei kirjutataks
 	gl.colorMask(false,false,false,false);
 	gl.depthMask(true);
-	renderer.render(port1_scene,camera);
-	renderer.render(port2_scene,camera);
+	renderer.render(this.scene,camera);
+	renderer.render(this.otherPortal.scene,camera);
 	gl.enable(gl.DEPTH_TEST);
 	
 	//Joonistame lõpliku stseeni
@@ -204,7 +287,9 @@ Portal.prototype.draw = function(camera){
 			this.teleportCam(portal,camera);
 		}
 	}
+	renderer.render(scene,camera);
 }
+
 function portal_view(camera, src_portal, dst_portal, kordaja) {
 	//TODO Kogu see matemaatika siin paneb segast. Leida parem lahendus. 
 	//Eesmärk: liigutada kaamera õigesse kohta et portaalist oleks näha õiget objekti.
@@ -308,8 +393,15 @@ function draw() {
 	}
 	else if (camera.position.z < -wallPos) {
 		camera.position.z += 0.25;
-	}			
+	}	
 	
+	renderer.autoClear = false;
+	renderer.clear(true,true,true);
+	camera.updateMatrixWorld();
+	camera.matrixAutoUpdate = false;
+	portal1.drawRecursivePortal(camera,renderer.context,0,3);
+	camera.matrixAutoUpdate = true;
+/*	
 	camera.updateMatrixWorld();
 	original_mat = camera.matrixWorld.clone();
 	var original_proj = camera.projectionMatrix.clone();
@@ -410,7 +502,7 @@ function draw() {
 	camera.matrixAutoUpdate = true;
 //	camera.matrixWorld = portal_view(camera,port1_quad,port2_quad,1);
 	renderer.render(scene,camera);
-	
+	*/
 }
 function teleportCam(portal) {
 	//console.log(portal);

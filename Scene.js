@@ -23,11 +23,13 @@ var keyboard = new THREEx.KeyboardState();
 
 
 var wallPos = 50; // seina kaugus 0punktist
-var quadSideLength = 10; // portaali quadi küljepikkus
+var quadSideLength = 30; // portaali quadi küljepikkus
 
 var speed = 1;
 
 var hangar;
+
+var portal1, portal2;
 
 function onLoad() { 
 	var canvasContainer = document.getElementById('myCanvasContainer'); 
@@ -43,7 +45,7 @@ function onLoad() {
 	port1_scene = new THREE.Scene();
 	port2_scene = new THREE.Scene();
 	
-	camera = new THREE.PerspectiveCamera(80, width / height, 1, 200);
+	camera = new THREE.PerspectiveCamera(80, width / height, 1, 1000);
 	camera.position.set(viewerPosition.x, viewerPosition.y, viewerPosition.z);
 	camera.up = new THREE.Vector3(0, 0, -1);
 	camera.lookAt(new THREE.Vector3(0,0,0));
@@ -80,6 +82,9 @@ function onLoad() {
 	port2_scene.add(port2_quad);
 	
 	createObjects(scene);
+	
+	portal1 = new Portal(-wallPos+0.005,-5,0.005, Math.PI/2);
+	portal2 = portal1.createBoundPortal( wallPos- 0.005, -5,0.005,-Math.PI/2);
 	
 	//textures
 	var loader = new THREE.TextureLoader();
