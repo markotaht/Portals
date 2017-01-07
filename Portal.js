@@ -141,7 +141,12 @@ Portal.prototype.portal_view = function(camera, move=false){
 }
 
 Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, move=false){
-	var portals = [this, this.otherPortal];
+	var portals;
+	if(camera.position.distanceTo(this.quad.position) > camera.position.distanceTo(this.otherPortal.quad.position)){
+		portals = [this, this.otherPortal];
+	}else{
+		portals = [this.otherPortal, this];
+	}
 	var original_mat = camera.matrixWorld.clone();
 	var original_proj = camera.projectionMatrix.clone();
 	for(var i in portals){
