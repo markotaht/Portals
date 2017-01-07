@@ -1,7 +1,5 @@
 //Teha protaal objektiks. Vajab veel arendust
-var Portal = function(x,y,z,rot){
-	this.texture1 = null;
-	this.texture2 = null;
+var Portal = function(x,y,z,rot,name){
 	this.position = new THREE.Vector3(x,y,z);
 	//Vajab veel mõtlemist
 	this.rot = rot;
@@ -10,22 +8,18 @@ var Portal = function(x,y,z,rot){
 	this.otherPortal = null
 	//Luua siia vastav object
 	this.quad = addQuad(null, x,y,z, rot);
+	this.quad.name = name;
 	//Ilmselt tuleb siia teha portaali stseen. 
 	this.scene = new THREE.Scene();
 	this.scene.add(this.quad);
 }
 
-Portal.prototype.createBoundPortal = function(x,y,z,rot){
-	this.otherPortal = new Portal(x,y,z,rot);
+Portal.prototype.createBoundPortal = function(x,y,z,rot,name){
+	this.otherPortal = new Portal(x,y,z,rot,name);
 	this.otherPortal.otherPortal = this;
 	return this.otherPortal;
 }
 
-Portal.prototype.newPosition = function(x,y,z,rot){
-	this.position = new THREE.Vector3(x,y,z);
-	this.rot = rot;
-	this.quad.position = this.position;
-}
 
 Portal.prototype.scaleUp = function(){
 	if(this.quad.scale.x < this.maxscale) {
@@ -37,11 +31,26 @@ Portal.prototype.scaleUp = function(){
 }
 
 Portal.prototype.scaleDown = function(){
-	if(port1_quad.scale.x > this.minscale){
+	if(this.quad.scale.x > this.minscale){
 		this.quad.scale.x -= 0.1;
 		this.quad.scale.y -= 0.1;
 		this.otherPortal.quad.scale.x -= 0.1;
 		this.otherPortal.quad.scale.y -= 0.1;
+	}
+}
+
+Portal.prototype.place = function(){
+	var i = intersects[0];
+	this.quad.position.set(i.point.x, i.point.y, i.point.z);
+	this.quad.translateZ(0.15);
+	if (i.object.name.indexOf("Wall") != -1) {
+		this.quad.rotation.set(i.object.rotation.x, i.object.rotation.y, i.object.rotation.z);
+	}
+	else {			
+		var Yaxis = new THREE.Vector3(0,1,0);
+		var pos = new THREE.Vector3();
+		pos.addVectors(intersects[0].face.normal, intersects[0].point);
+		this.quad.lookAt(pos);
 	}
 }
 
@@ -285,28 +294,6 @@ Portal.prototype.draw = function(camera){
 	//Joonistame lõpliku stseeni
 	gl.colorMask(true,true,true,true);
 	
-	center.x = (window.innerWidth / (window.innerWidth * 2) ) * 2 - 1;
-	center.y = -(window.innerHeight / (window.innerHeight  * 2) ) * 2 + 1;
-	raycaster.setFromCamera( center, camera );
-
-	// kasutame raycasterit, et leida objektidega lõikumised
-	intersects = raycaster.intersectObjects( scene.children, true);
-	intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
-	intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
-	var portal = null;
-	if (intersectsPortals.length >= 1) {
-		if (intersectsPortals[0].distance <= 0.7) {
-			if (intersectsPortals[0].object.name == "portal1"){
-				console.log(intersectsPortals[0].object.name);
-				portal = port2_quad;
-			}
-			if (intersectsPortals[0].object.name == "portal2"){
-				console.log(intersectsPortals[0].object.name);
-				portal = port1_quad;
-			}
-			this.teleportCam(portal,camera);
-		}
-	}
 	renderer.render(scene,camera);
 }
 
@@ -349,6 +336,29 @@ function draw() {
 	camera.matrixAutoUpdate = false;
 	portal1.drawRecursivePortal(camera,renderer.context,0,3);
 	camera.matrixAutoUpdate = true;
+	
+	center.x = (window.innerWidth / (window.innerWidth * 2) ) * 2 - 1;
+	center.y = -(window.innerHeight / (window.innerHeight  * 2) ) * 2 + 1;
+	raycaster.setFromCamera( center, camera );
+
+	// kasutame raycasterit, et leida objektidega lõikumised
+	intersects = raycaster.intersectObjects( scene.children, true);
+	intersectsPortals = raycaster.intersectObjects( portal1.scene.children, true);
+	intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( portal2.scene.children, true));
+	var portal = null;
+	if (intersectsPortals.length >= 1) {
+		if (intersectsPortals[0].distance <= 0.7) {
+			if (intersectsPortals[0].object.name == "portal1"){
+				console.log(intersectsPortals[0].object.name);
+				portal = portal2.quad;
+			}
+			if (intersectsPortals[0].object.name == "portal2"){
+				console.log(intersectsPortals[0].object.name);
+				portal = portal1.quad;
+			}
+			this.teleportCam(portal,camera);
+		}
+	}
 }
 
 function teleportCam(portal, rotation, position, liikumisvektor) {

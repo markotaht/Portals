@@ -1,25 +1,15 @@
 //Muutujad, mingit hetk tuleb üle vaadata
-var renderer, scene, camera, port1_scene, port2_scene;
+var renderer, scene, camera;
 var raycasterCam = new THREE.Raycaster();
 var raycaster = new THREE.Raycaster();
 var center = new THREE.Vector2();
 var intersects;
 
-var port1, port2, port1_1,port2_1;
 
 var lightPosition;
 var light;
 var lightTrajectory;
 var plight;
-
-var port1_cam;
-var port1_quad;
-
-var port2_cam;
-var port2_quad;
-
-var PORT_SCALE_MAX = 5.0;
-var PORT_SCALE_MIN = 0.5;
 
 var viewerPosition = new THREE.Vector3(0.0, 0.0, 45.0);
 
@@ -61,8 +51,6 @@ function onLoad() {
 	renderer.autoClear = false;
 	
 	scene = new THREE.Scene();
-	port1_scene = new THREE.Scene();
-	port2_scene = new THREE.Scene();
 	
 	camera = new THREE.PerspectiveCamera(80, width / height, 1, 1000);
 	camera.position.set(viewerPosition.x, viewerPosition.y, viewerPosition.z);
@@ -88,22 +76,10 @@ function onLoad() {
 	//Objektide loomine ja stseenidesse paigutamine
 	hangar = addHangar(scene);
 	
-	port1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
-	port2 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
-	port1_1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
-	port2_1 = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter});
-	
-	port1_quad = addQuad(port1.texture, -wallPos+0.005,-5,0.005, Math.PI/2);
-	port2_quad = addQuad(port2.texture, wallPos- 0.005, -5,0.005,-Math.PI/2);
-	port1_quad.name = "portal1";
-	port2_quad.name = "portal2";
-	port1_scene.add(port1_quad);
-	port2_scene.add(port2_quad);
-	
 	createObjects(scene);
 	
-	portal1 = new Portal(-wallPos+0.005,-5,0.005, Math.PI/2);
-	portal2 = portal1.createBoundPortal( wallPos- 0.005, -5,0.005,-Math.PI/2);
+	portal1 = new Portal(-wallPos+0.005,-5,0.005, Math.PI/2, "portal1");
+	portal2 = portal1.createBoundPortal( wallPos- 0.005, -5,0.005,-Math.PI/2, "portal2");
 	
 	//textures
 	var loader = new THREE.TextureLoader();
@@ -194,32 +170,9 @@ function parseControls(dt) {
 			speed += 0.2;
 	}
 	if(keyboard.pressed("z")){ // z tekitab P1
-		var i = intersects[0];
-		port1_quad.position.set(i.point.x, i.point.y, i.point.z);
-		port1_quad.translateZ(0.15);
-		if (i.object.name.indexOf("Wall") != -1) {
-			port1_quad.rotation.set(i.object.rotation.x, i.object.rotation.y, i.object.rotation.z);
-		}
-		else {			
-			var Yaxis = new THREE.Vector3(0,1,0);
-			var pos = new THREE.Vector3();
-			pos.addVectors(intersects[0].face.normal, intersects[0].point);
-			port1_quad.lookAt(pos);
-		}
+		portal1.place();
 	}
 	if(keyboard.pressed("x")){ // x tekitab P2
-		var i = intersects[0];
-		port2_quad.position.set(i.point.x, i.point.y, i.point.z);
-		port2_quad.translateZ(0.15);
-		console.log(i.object.name);
-		if (i.object.name.indexOf("Wall") != -1) {
-			port2_quad.rotation.set(i.object.rotation.x, i.object.rotation.y, i.object.rotation.z);
-		}
-		else {			
-			var Yaxis = new THREE.Vector3(0,1,0);
-			var pos = new THREE.Vector3();
-			pos.addVectors(intersects[0].face.normal, intersects[0].point);
-			port2_quad.lookAt(pos);
-		}
+		portal2.place();
 	}
 }
