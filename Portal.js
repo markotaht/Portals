@@ -1,15 +1,10 @@
-//Teha protaal objektiks. Vajab veel arendust
 var Portal = function(x,y,z,rot,name){
 	this.position = new THREE.Vector3(x,y,z);
-	//Vajab veel mõtlemist
-	this.rot = rot;
 	this.maxscale = 5.0;
 	this.minscale = 0.5;
 	this.otherPortal = null
-	//Luua siia vastav object
 	this.quad = addQuad(null, x,y,z, rot);
-	this.quad.name = name;
-	//Ilmselt tuleb siia teha portaali stseen. 
+	this.quad.name = name; 
 	this.scene = new THREE.Scene();
 	this.scene.add(this.quad);
 }
@@ -42,7 +37,6 @@ Portal.prototype.scaleDown = function(){
 Portal.prototype.place = function(){
 	var i = intersects[0];
 	this.quad.position.set(i.point.x, i.point.y, i.point.z);
-	console.log(this.quad.position);
 	this.quad.translateZ(0.25);
 	if (i.object.name.indexOf("Wall") != -1) {
 		this.quad.rotation.set(i.object.rotation.x, i.object.rotation.y, i.object.rotation.z);
@@ -56,7 +50,6 @@ Portal.prototype.place = function(){
 }
 
 Portal.prototype.teleportCam = function(camera, rotation, position, liikumisvektor) {
-	console.log(liikumisvektor);
 	var pos = this.quad.position;
 	camera.position.set(pos.x + position.x, pos.y + position.y, pos.z + position.z);
 	camera.rotation.y = this.quad.rotation.y + Math.PI + rotation;
@@ -231,8 +224,6 @@ Portal.prototype.draw = function(camera){
 	
 	var gl = renderer.context;
 	
-	//Mõelda mida teha portaali stseeniga...
-	
 	//Puhastame kõik buffrid ära
 	renderer.autoClear = false;
 	renderer.clear(true,true,true);
@@ -304,9 +295,6 @@ Portal.prototype.draw = function(camera){
 	renderer.render(scene,camera);
 }
 
-
-//Selle võiks peita nt portal objekti sisse. SIis on lihtsalt portal.draw() ja pärast otsa tavaline scene renderdus. Siis jääb kogu protaali loogika
-//ilusti portaali objekti sisse
 function draw() {
 	requestAnimationFrame(draw);
 
@@ -347,14 +335,11 @@ function draw() {
 	
 	center.x = (window.innerWidth / (window.innerWidth * 2) ) * 2 - 1;
 	center.y = -(window.innerHeight / (window.innerHeight  * 2) ) * 2 + 1;
-	//raycaster.setFromCamera( center, camera );
 
 	// kasutame raycasterit, et leida objektidega lõikumised
 	raycasterCam.setFromCamera( center, camera );
 	intersects = raycasterCam.intersectObjects(scene.children, true);
 	var intersectsObjects;
-	//intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
-	//intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
 	var collisions;
 	var portal;
 	var rotationDiff;
@@ -366,13 +351,11 @@ function draw() {
 		intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects(portal2.scene.children, true));
 		if (intersectsPortals.length > 0 && intersectsPortals[0].distance <= 0.7) {
 			if (intersectsPortals[0].object.name == "portal1"){
-				console.log(intersectsPortals[0].object.name);
 				portal = portal2;
 				rotationDiff = camera.rotation.y - portal1.quad.rotation.y;
 				position = new THREE.Vector3().copy(camera.position).sub(portal1.quad.position);
 			}
 			if (intersectsPortals[0].object.name == "portal2"){
-				console.log(intersectsPortals[0].object.name);
 				portal = portal1;
 				rotationDiff = camera.rotation.y - portal2.quad.rotation.y;
 				position = new THREE.Vector3().copy(camera.position).sub(portal2.quad.position);

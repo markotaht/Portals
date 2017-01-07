@@ -1,18 +1,10 @@
 var textures = {};
-var texturesToLoad = 5; //Load a lot of textures
+var texturesToLoad = 2;
 var textureIndex = 0;
 function onTextureLoaded(texture, name) {
-	//You may want to change some min and mag filters of the texture here.
-	//You do want to make the texture repeating. Default is clamped at the edges.
-	//After changing texture properties, tell it that it needs an update.
 	texture.wrapS = THREE.RepeatWrapping;
 	texture.wrapT = THREE.RepeatWrapping;
-	//texture.wrapT = THREE.MirroredRepeatWrapping;
 
-	//texture.minFilter = THREE.NearestFilter;
-	//texture.magFilter = THREE.NearestFilter;
-	
-	//Push the texture to the array.
 	textures[name] = texture;
 	
 	if (--texturesToLoad == 0) {

@@ -2,31 +2,7 @@ var lamp;
 var lampchain;
 
 function createObjects(scene){
-	var randomObjects = new THREE.Object3D();
 	
-	for (var i = 0; i < 10; i++) {
-		var cube = createCube('#'+(Math.random()*0xFFFFFF<<0).toString(16)); //new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), createShaderMaterial(new THREE.Color(0x3DE5CF)));
-		cube.position.set(randInt(-40,40), randInt(-30,20), randInt(-40,40));
-		cube.scale.set(randInt(1,4), randInt(1,4), randInt(1,4));
-		randomObjects.add(cube);
-	}
-	for (var i = 0; i < 10; i++) {
-		var sphere = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32),
-					new THREE.MeshPhongMaterial({ color: '#'+(Math.random()*0xFFFFFF<<0).toString(16), specular: 0x555555, shininess: 30 }));
-		sphere.position.set(randInt(-50,40), randInt(-10,20), randInt(-40,50));
-		sphere.scale.set(randInt(1,2), randInt(1,2), randInt(1,2));
-		randomObjects.add(sphere);		
-	}
-	
-	var cube = createCube(0xFFFFFF); //new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), createShaderMaterial(new THREE.Color(0x3DE5CF)));
-		cube.position.set(randInt(-40,-40), randInt(-30,20), -80);
-		cube.scale.set(5,5,5);
-		randomObjects.add(cube);
-		
-	randomObjects.position.set(0, 0, 0);
-	//scene.add(randomObjects);
-	
-	//Main scene that will be in the final version:
 	var mainobjects = new THREE.Object3D();
 	
 	var table = createCube(0xA66622);
@@ -59,7 +35,6 @@ function randInt(min, max) {
 function addHangar(scene) {
 	var hangar = new THREE.Object3D();
 	var halfPi = Math.PI / 2;
-	//var wallPos = 20;
 	var wallSize = 2*wallPos;
 	var beige = 0xf9dd87;
 	var light_gray = 0xe2e1de;

@@ -24,6 +24,7 @@ var quadSideLength = 10; // portaali quadi küljepikkus
 var speed = 1;
 
 var hangar;
+
 // raycasteri jaoks
 var rays = [
       new THREE.Vector3(0, 0, 1),
@@ -67,8 +68,6 @@ function onLoad() {
 	lightTrajectory.closed = true;
 	light = new THREE.Vector3();
 	
-	//Light so that walls with phong material could be seen
-	//TODO: combine with our light
 	plight = new THREE.PointLight( 0xffffff, 1, 1000 );
 	plight.position.set(10, 1, 15);
 	scene.add(plight);
@@ -88,10 +87,7 @@ function onLoad() {
 	loader.setPath('http://cglearn.codelight.eu/files/course/7/textures/');
 
 	loader.load('wallTexture.jpg', function(tex){onTextureLoaded(tex,"wall")});
-	loader.load('ut256.png', function(tex){onTextureLoaded(tex,"ut")});
 	loader.load('wallTexture2.jpg', function(tex){onTextureLoaded(tex,"wall2")});
-	loader.load('stripeTexture.png', function(tex){onTextureLoaded(tex,"stripe")});
-	loader.load('sasuke256.png', function(tex){onTextureLoaded(tex,"sasuke")});
 }
 
 
