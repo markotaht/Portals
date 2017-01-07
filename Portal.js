@@ -42,7 +42,8 @@ Portal.prototype.scaleDown = function(){
 Portal.prototype.place = function(){
 	var i = intersects[0];
 	this.quad.position.set(i.point.x, i.point.y, i.point.z);
-	this.quad.translateZ(0.15);
+	console.log(this.quad.position);
+	this.quad.translateZ(0.25);
 	if (i.object.name.indexOf("Wall") != -1) {
 		this.quad.rotation.set(i.object.rotation.x, i.object.rotation.y, i.object.rotation.z);
 	}
@@ -56,11 +57,11 @@ Portal.prototype.place = function(){
 
 Portal.prototype.teleportCam = function(camera, rotation, position, liikumisvektor) {
 	console.log(liikumisvektor);
-	var pos = this.position;
+	var pos = this.quad.position;
 	camera.position.set(pos.x + position.x, pos.y + position.y, pos.z + position.z);
 	camera.rotation.y = this.quad.rotation.y + Math.PI + rotation;
 	liikumisvektor.applyAxisAngle(new THREE.Vector3(0,1,0), camera.rotation.y - Math.PI);
-	camera.translateOnAxis(liikumisvektor, 2);
+	camera.translateOnAxis(liikumisvektor, 1);
 }
 
 Portal.prototype.portal_view = function(camera, move=false){
@@ -358,7 +359,7 @@ function draw() {
 		raycaster.set(camera.position, rays[i]);
 		intersectsPortals = raycaster.intersectObjects(portal1.scene.children, true);
 		intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects(portal2.scene.children, true));
-		if (intersectsPortals.length > 0 && intersectsPortals[0].distance <= 0.25) {
+		if (intersectsPortals.length > 0 && intersectsPortals[0].distance <= 0.7) {
 			if (intersectsPortals[0].object.name == "portal1"){
 				console.log(intersectsPortals[0].object.name);
 				portal = portal2;
@@ -371,8 +372,8 @@ function draw() {
 				rotationDiff = camera.rotation.y - portal2.quad.rotation.y;
 				position = new THREE.Vector3().copy(camera.position).sub(portal2.quad.position);
 			}
-			if(time - teleportTime > 1){
-				camera.translateOnAxis(liikumisVektor, 2);
+			if(time - teleportTime > 0.5){
+				camera.translateOnAxis(liikumisVektor, 1);
 				teleportTime = time;
 				portal.teleportCam(camera, rotationDiff, position, liikumisVektor);     
 			} 
