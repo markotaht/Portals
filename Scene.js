@@ -1,5 +1,6 @@
 //Muutujad, mingit hetk tuleb üle vaadata
 var renderer, scene, camera, port1_scene, port2_scene;
+var raycasterCam = new THREE.Raycaster();
 var raycaster = new THREE.Raycaster();
 var center = new THREE.Vector2();
 var intersects;
@@ -9,12 +10,16 @@ var port1, port2, port1_1,port2_1;
 var lightPosition;
 var light;
 var lightTrajectory;
+var plight;
 
 var port1_cam;
 var port1_quad;
 
 var port2_cam;
 var port2_quad;
+
+var PORT_SCALE_MAX = 5.0;
+var PORT_SCALE_MIN = 0.5;
 
 var viewerPosition = new THREE.Vector3(0.0, 0.0, 45.0);
 
@@ -23,13 +28,27 @@ var keyboard = new THREEx.KeyboardState();
 
 
 var wallPos = 50; // seina kaugus 0punktist
-var quadSideLength = 30; // portaali quadi küljepikkus
+var atWall = false;
+var quadSideLength = 10; // portaali quadi küljepikkus
 
 var speed = 1;
 
 var hangar;
+// raycasteri jaoks
+var rays = [
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(1, 0, 1),
+      new THREE.Vector3(1, 0, 0),
+      new THREE.Vector3(1, 0, -1),
+      new THREE.Vector3(0, 0, -1),
+      new THREE.Vector3(-1, 0, -1),
+      new THREE.Vector3(-1, 0, 0),
+      new THREE.Vector3(-1, 0, 1)
+    ];
+var liikumisVektor = new THREE.Vector3();
 
 var portal1, portal2;
+var teleportTime = 0;
 
 function onLoad() { 
 	var canvasContainer = document.getElementById('myCanvasContainer'); 
@@ -52,17 +71,17 @@ function onLoad() {
 	
 	//Valguse liikumine
 	lightTrajectory = new THREE.CatmullRomCurve3([
-		new THREE.Vector3(-20, -12, 8 ),
-		new THREE.Vector3(-13, -7, -8 ),
+		new THREE.Vector3(-20, 8, 8 ),
+		new THREE.Vector3(-13, 23, -8 ),
 		new THREE.Vector3( 12, 20, -20 ),
-		new THREE.Vector3( 8, -7, 40 ),
+		new THREE.Vector3( 8, 13, 20 ),
 	]);
 	lightTrajectory.closed = true;
 	light = new THREE.Vector3();
 	
 	//Light so that walls with phong material could be seen
 	//TODO: combine with our light
-	var plight = new THREE.PointLight( 0xffffff, 1, 1000 );
+	plight = new THREE.PointLight( 0xffffff, 1, 1000 );
 	plight.position.set(10, 1, 15);
 	scene.add(plight);
 	
@@ -104,46 +123,80 @@ function toRad(degree) {
 
 	return Math.PI * 2 * degree / 360;
 }
-			
+function checkCameraPosition() {
+	if (camera.position.x >= wallPos)
+		camera.position.x -= 0.2;
+	else if (camera.position.x <= -wallPos)
+		camera.position.x += 0.2;
+	if (camera.position.z >= wallPos)
+		camera.position.z -= 0.2;
+	else if (camera.position.z <= -wallPos)
+		camera.position.z += 0.2;
+}		
 function parseControls(dt) {
 	if(keyboard.pressed("left")){
-		camera.rotation.y += toRad(120 * speed/3 * dt % 360);
+		camera.rotation.y += toRad(120 * speed/4 * dt % 360);
 	}
 	if(keyboard.pressed("right")){
 		camera.rotation.y -= toRad(120 * speed/3 * dt % 360);
 	}
 	if(keyboard.pressed("up")) {
-		port1_quad.scale.x += 0.1;
-		port1_quad.scale.y += 0.1;
-		port2_quad.scale.x += 0.1;
-		port2_quad.scale.y += 0.1;
+		if(port1_quad.scale.x < PORT_SCALE_MAX) {
+			port1_quad.scale.x += 0.1;
+			port1_quad.scale.y += 0.1;
+			port2_quad.scale.x += 0.1;
+			port2_quad.scale.y += 0.1;
+		}
 	}
 	if(keyboard.pressed("down")) {
-		port1_quad.scale.x -= 0.1;
-		port1_quad.scale.y -= 0.1;
-		port2_quad.scale.x -= 0.1;
-		port2_quad.scale.y -= 0.1;		
+		if(port1_quad.scale.x > PORT_SCALE_MIN){
+			port1_quad.scale.x -= 0.1;
+			port1_quad.scale.y -= 0.1;
+			port2_quad.scale.x -= 0.1;
+			port2_quad.scale.y -= 0.1;
+		}
 	}
+	var oldPos = new THREE.Vector3().copy(camera.position);
+	var camPosCheck = camera.position.x < wallPos && camera.position.x > -wallPos && camera.position.z < wallPos && camera.position.z > -wallPos;
 	if(keyboard.pressed("w")){ // W edasi
-		camera.translateZ(-10 * speed * dt % 360);
+		if(camPosCheck){
+			
+			camera.translateZ(-10 * speed * dt % 360);
+			liikumisVektor.subVectors(camera.position, oldPos).normalize(); 
+		}
+		checkCameraPosition();			
 	}
 	if(keyboard.pressed("s")){ // S tagasi
-		camera.translateZ(10 * speed * dt % 360);
+		if(camPosCheck){
+			camera.translateZ(10 * speed * dt % 360);
+			liikumisVektor.subVectors(camera.position, oldPos).normalize() 
+		}
+		checkCameraPosition();
 	}
 	if(keyboard.pressed("a")){ // A liigutab vasakule
-		camera.translateX(-10 * speed * dt % 360)
+		if(camPosCheck){
+			camera.translateX(-10 * speed * dt % 360);
+			liikumisVektor.subVectors(camera.position, oldPos).normalize() 
+		}
+		checkCameraPosition();
 	}
 	if(keyboard.pressed("d")){ // D liigutab paremale
-		camera.translateX(10 * speed * dt % 360)
+		if(camPosCheck){
+			camera.translateX(10 * speed * dt % 360);
+			liikumisVektor.subVectors(camera.position, oldPos).normalize() 
+		}
+		checkCameraPosition();
 	}
 	if(keyboard.pressed("q")){ // Q liigutab y +
 		if (camera.position.y > -wallPos) {
 			camera.position.y -= 10 * speed * dt % 360;
+			liikumisVektor.set(0,1,0);
 		}
 	}
 	if(keyboard.pressed("e")){ // E liigutab y -
 		if (camera.position.y < wallPos) {
 			camera.position.y += 10 * speed * dt % 360;
+			liikumisVektor.set(0,-1,0);
 		}		
 	}
 	if(keyboard.pressed("shift")) {
@@ -151,14 +204,11 @@ function parseControls(dt) {
 			speed += 0.2;
 	}
 	if(keyboard.pressed("z")){ // z tekitab P1
-		port1_quad.position.x = intersects[0].point.x;
-		port1_quad.position.y = intersects[0].point.y;
-		port1_quad.position.z = intersects[0].point.z;
-		port1_quad.translateZ(0.1);
-		if (intersects[0].object.name == "wall") {
-			port1_quad.rotation.x = intersects[0].object.rotation.x;
-			port1_quad.rotation.y = intersects[0].object.rotation.y;
-			port1_quad.rotation.z = intersects[0].object.rotation.z;
+		var i = intersects[0];
+		port1_quad.position.set(i.point.x, i.point.y, i.point.z);
+		port1_quad.translateZ(0.15);
+		if (i.object.name.indexOf("Wall") != -1) {
+			port1_quad.rotation.set(i.object.rotation.x, i.object.rotation.y, i.object.rotation.z);
 		}
 		else {			
 			var Yaxis = new THREE.Vector3(0,1,0);
@@ -168,14 +218,12 @@ function parseControls(dt) {
 		}
 	}
 	if(keyboard.pressed("x")){ // x tekitab P2
-		port2_quad.position.x = intersects[0].point.x;
-		port2_quad.position.y = intersects[0].point.y;
-		port2_quad.position.z = intersects[0].point.z;
-		port2_quad.translateZ(0.1);
-		if (intersects[0].object.name == "wall") {
-			port2_quad.rotation.x = intersects[0].object.rotation.x;
-			port2_quad.rotation.y = intersects[0].object.rotation.y;
-			port2_quad.rotation.z = intersects[0].object.rotation.z;
+		var i = intersects[0];
+		port2_quad.position.set(i.point.x, i.point.y, i.point.z);
+		port2_quad.translateZ(0.15);
+		console.log(i.object.name);
+		if (i.object.name.indexOf("Wall") != -1) {
+			port2_quad.rotation.set(i.object.rotation.x, i.object.rotation.y, i.object.rotation.z);
 		}
 		else {			
 			var Yaxis = new THREE.Vector3(0,1,0);
@@ -184,5 +232,4 @@ function parseControls(dt) {
 			port2_quad.lookAt(pos);
 		}
 	}
-
 }

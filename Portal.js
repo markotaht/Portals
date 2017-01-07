@@ -348,7 +348,7 @@ function portal_view(camera, src_portal, dst_portal, kordaja) {
 	
 	var normal = new THREE.Vector3(0, 0, 1).applyQuaternion(srcquat);
 	var clipPlane = new THREE.Vector4(normal.x, normal.y, normal.z, srcpos.length());
-	clipPlane.applyMatrix4(new THREE.Matrix4().getInverse(camera.matrixWorldInverse.clone().transpose()));
+	clipPlane.applyMatrix4(new THREE.Matrix4().getInverse(camera.matrixWorldInverse.clone()));
 	if(clipPlane.w > 0){
 		return inverse_view_to_source;
 	}
@@ -376,10 +376,12 @@ function draw() {
 	parseControls(dt);
 	
 	var time = clock.getElapsedTime();
-	var m = time*0.7;
+	var m = time*0.3;
 	lightPosition = lightTrajectory.getPoint(m - parseInt(m));
 	scene.children[0].position.set(lightPosition.x, lightPosition.y, lightPosition.z);
-	light.set(lightPosition.x,lightPosition.y,lightPosition.z);
+	lamp.position.set(lightPosition.x, lightPosition.y, lightPosition.z);
+	lampchain.geometry.vertices[1] = new THREE.Vector3(lightPosition.x, lightPosition.y, lightPosition.z);
+	lampchain.geometry.verticesNeedUpdate = true;
 	
 	if (camera.position.x > wallPos-0.5) {
 		camera.position.x -= 0.25;
@@ -457,7 +459,7 @@ function draw() {
 	gl.disable(gl.STENCIL_TEST);
 	renderer.clear(false,false,true);
 	
-	//Paneme kaamera tagai algesse kohta
+	//Paneme kaamera tagasi algesse kohta
 	camera.matrixWorld = original_mat.clone();
 	camera.projectionMatrix = original_proj.clone();
 	camera.matrixAutoUpdate = true;
@@ -479,36 +481,53 @@ function draw() {
 	
 	center.x = (window.innerWidth / (window.innerWidth * 2) ) * 2 - 1;
 	center.y = -(window.innerHeight / (window.innerHeight  * 2) ) * 2 + 1;
-	raycaster.setFromCamera( center, camera );
+	
+
 
 	// kasutame raycasterit, et leida objektidega lõikumised
-	intersects = raycaster.intersectObjects( scene.children, true);
-	intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
-	intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
-	var portal = null;
-	if (intersectsPortals.length >= 1) {
-		if (intersectsPortals[0].distance <= 0.7) {
+	raycasterCam.setFromCamera( center, camera );
+	intersects = raycasterCam.intersectObjects(scene.children, true);
+	var intersectsObjects;
+	//intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
+	//intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
+	var collisions;
+	var portal;
+	var rotationDiff;
+	var position;
+   	for (var i = 0; i < rays.length; i++) {
+      	// anname raycasterile kiire suuna
+      	raycaster.set(camera.position, rays[i]);
+		intersectsPortals = raycaster.intersectObjects(port1_scene.children, true);
+		intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects(port2_scene.children, true));
+      	if (intersectsPortals.length > 0 && intersectsPortals[0].distance <= 0.25) {
 			if (intersectsPortals[0].object.name == "portal1"){
 				console.log(intersectsPortals[0].object.name);
 				portal = port2_quad;
+				rotationDiff = camera.rotation.y - port1_quad.rotation.y;
+				position = new THREE.Vector3().copy(camera.position).sub(port1_quad.position);
 			}
 			if (intersectsPortals[0].object.name == "portal2"){
 				console.log(intersectsPortals[0].object.name);
 				portal = port1_quad;
+				rotationDiff = camera.rotation.y - port2_quad.rotation.y;
+				position = new THREE.Vector3().copy(camera.position).sub(port2_quad.position);
 			}
-			teleportCam(portal);
-		}
-	}
-	camera.matrixAutoUpdate = true;
-//	camera.matrixWorld = portal_view(camera,port1_quad,port2_quad,1);
+			if(time - teleportTime > 1){
+				camera.translateOnAxis(liikumisVektor, 2);
+				teleportTime = time;
+				teleportCam(portal, rotationDiff, position, liikumisVektor);     
+			} 		
+      	}
+    }
+
 	renderer.render(scene,camera);
 	*/
 }
-function teleportCam(portal) {
+function teleportCam(portal, rotation, position, liikumisvektor) {
 	//console.log(portal);
-	camera.position.x = portal.position.x;
-	camera.position.z = portal.position.z;
-	camera.position.y = portal.position.y;
-	camera.rotation.y = portal.rotation.y + Math.PI;
-	camera.translateZ(1);
+	var pos = portal.position;
+	camera.position.set(pos.x + position.x, pos.y + position.y, pos.z + position.z);
+	camera.rotation.y = portal.rotation.y + Math.PI + rotation;
+	liikumisvektor.applyAxisAngle(new THREE.Vector3(0,1,0), camera.rotation.y - Math.PI);
+	camera.translateOnAxis(liikumisvektor, 2);
 }

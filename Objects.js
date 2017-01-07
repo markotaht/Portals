@@ -1,3 +1,6 @@
+var lamp;
+var lampchain;
+
 function createObjects(scene){
 	var randomObjects = new THREE.Object3D();
 	
@@ -21,8 +24,35 @@ function createObjects(scene){
 		randomObjects.add(cube);
 		
 	randomObjects.position.set(0, 0, 0);
-	scene.add(randomObjects);
+	//scene.add(randomObjects);
+	
+	//Main scene that will be in the final version:
+	var mainobjects = new THREE.Object3D();
+	
+	var table = createCube(0xA66622);
+	table.position.set(20, -40, -20);
+	table.scale.set(14, 20, 14);
+	mainobjects.add(table);
+	
+	var cone = new THREE.Mesh( new THREE.ConeGeometry( 20, 80, 10 ), 
+			new THREE.MeshPhongMaterial( {color: 0x88ff00} ) );
+	cone.position.set(-35, -40, 35);
+	mainobjects.add(cone);
+	
+	lamp = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32),
+			new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xffffff}));
+	lamp.scale.set(0.8, 0.8, 0.8);
+	mainobjects.add(lamp);
+	
+	var geometry = new THREE.Geometry();
+	geometry.vertices.push(new THREE.Vector3( 0, 50, 0 ),new THREE.Vector3( 0, 0, 0 ));
+	lampchain = new THREE.Line( geometry, new THREE.LineBasicMaterial({color: 0x727272}) );
+	mainobjects.add(lampchain); 
+	
+	scene.add(mainobjects);
+	
 }
+
 function randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
