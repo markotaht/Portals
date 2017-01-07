@@ -141,20 +141,10 @@ function parseControls(dt) {
 		camera.rotation.y -= toRad(120 * speed/3 * dt % 360);
 	}
 	if(keyboard.pressed("up")) {
-		if(port1_quad.scale.x < PORT_SCALE_MAX) {
-			port1_quad.scale.x += 0.1;
-			port1_quad.scale.y += 0.1;
-			port2_quad.scale.x += 0.1;
-			port2_quad.scale.y += 0.1;
-		}
+		portal1.scaleUp();
 	}
 	if(keyboard.pressed("down")) {
-		if(port1_quad.scale.x > PORT_SCALE_MIN){
-			port1_quad.scale.x -= 0.1;
-			port1_quad.scale.y -= 0.1;
-			port2_quad.scale.x -= 0.1;
-			port2_quad.scale.y -= 0.1;
-		}
+		portal1.scaleDown();
 	}
 	var oldPos = new THREE.Vector3().copy(camera.position);
 	var camPosCheck = camera.position.x < wallPos && camera.position.x > -wallPos && camera.position.z < wallPos && camera.position.z > -wallPos;

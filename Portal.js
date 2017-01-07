@@ -5,6 +5,8 @@ var Portal = function(x,y,z,rot){
 	this.position = new THREE.Vector3(x,y,z);
 	//Vajab veel mõtlemist
 	this.rot = rot;
+	this.maxscale = 5.0;
+	this.minscale = 0.5;
 	this.otherPortal = null
 	//Luua siia vastav object
 	this.quad = addQuad(null, x,y,z, rot);
@@ -23,6 +25,24 @@ Portal.prototype.newPosition = function(x,y,z,rot){
 	this.position = new THREE.Vector3(x,y,z);
 	this.rot = rot;
 	this.quad.position = this.position;
+}
+
+Portal.prototype.scaleUp = function(){
+	if(this.quad.scale.x < this.maxscale) {
+		this.quad.scale.x += 0.1;
+		this.quad.scale.y += 0.1;
+		this.otherPortal.quad.scale.x += 0.1;
+		this.otherPortal.quad.scale.y += 0.1;
+	}
+}
+
+Portal.prototype.scaleDown = function(){
+	if(port1_quad.scale.x > this.minscale){
+		this.quad.scale.x -= 0.1;
+		this.quad.scale.y -= 0.1;
+		this.otherPortal.quad.scale.x -= 0.1;
+		this.otherPortal.quad.scale.y -= 0.1;
+	}
 }
 
 Portal.prototype.teleportCam = function(portal, camera) {
