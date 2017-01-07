@@ -40,7 +40,7 @@ var liikumisVektor = new THREE.Vector3();
 var portal1, portal2;
 var teleportTime = 0;
 
-function onLoad() { 
+function onLoad() {
 	var canvasContainer = document.getElementById('myCanvasContainer'); 
 	var width  = 800; 
 	var height = 500;

@@ -54,12 +54,13 @@ Portal.prototype.place = function(){
 	}
 }
 
-Portal.prototype.teleportCam = function(portal, camera) {
-	camera.position.x = portal.position.x;
-	camera.position.z = portal.position.z;
-	camera.position.y = portal.position.y;
-	camera.rotation.y = portal.rotation.y + Math.PI;
-	camera.translateZ(1);
+Portal.prototype.teleportCam = function(camera, rotation, position, liikumisvektor) {
+	console.log(liikumisvektor);
+	var pos = this.position;
+	camera.position.set(pos.x + position.x, pos.y + position.y, pos.z + position.z);
+	camera.rotation.y = this.quad.rotation.y + Math.PI + rotation;
+	liikumisvektor.applyAxisAngle(new THREE.Vector3(0,1,0), camera.rotation.y - Math.PI);
+	camera.translateOnAxis(liikumisvektor, 2);
 }
 
 Portal.prototype.portal_view = function(camera, move=false){
@@ -340,32 +341,41 @@ function draw() {
 	
 	center.x = (window.innerWidth / (window.innerWidth * 2) ) * 2 - 1;
 	center.y = -(window.innerHeight / (window.innerHeight  * 2) ) * 2 + 1;
-	raycaster.setFromCamera( center, camera );
+	//raycaster.setFromCamera( center, camera );
 
 	// kasutame raycasterit, et leida objektidega lõikumised
-	intersects = raycaster.intersectObjects( scene.children, true);
-	intersectsPortals = raycaster.intersectObjects( portal1.scene.children, true);
-	intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( portal2.scene.children, true));
-	var portal = null;
-	if (intersectsPortals.length >= 1) {
-		if (intersectsPortals[0].distance <= 0.7) {
+	raycasterCam.setFromCamera( center, camera );
+	intersects = raycasterCam.intersectObjects(scene.children, true);
+	var intersectsObjects;
+	//intersectsPortals = raycaster.intersectObjects( port1_scene.children, true);
+	//intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects( port2_scene.children, true));
+	var collisions;
+	var portal;
+	var rotationDiff;
+	var position;
+	for (var i = 0; i < rays.length; i++) {
+		// anname raycasterile kiire suuna
+		raycaster.set(camera.position, rays[i]);
+		intersectsPortals = raycaster.intersectObjects(portal1.scene.children, true);
+		intersectsPortals.push.apply(intersectsPortals, raycaster.intersectObjects(portal2.scene.children, true));
+		if (intersectsPortals.length > 0 && intersectsPortals[0].distance <= 0.25) {
 			if (intersectsPortals[0].object.name == "portal1"){
 				console.log(intersectsPortals[0].object.name);
-				portal = portal2.quad;
+				portal = portal2;
+				rotationDiff = camera.rotation.y - portal1.quad.rotation.y;
+				position = new THREE.Vector3().copy(camera.position).sub(portal1.quad.position);
 			}
 			if (intersectsPortals[0].object.name == "portal2"){
 				console.log(intersectsPortals[0].object.name);
-				portal = portal1.quad;
+				portal = portal1;
+				rotationDiff = camera.rotation.y - portal2.quad.rotation.y;
+				position = new THREE.Vector3().copy(camera.position).sub(portal2.quad.position);
 			}
-			this.teleportCam(portal,camera);
+			if(time - teleportTime > 1){
+				camera.translateOnAxis(liikumisVektor, 2);
+				teleportTime = time;
+				portal.teleportCam(camera, rotationDiff, position, liikumisVektor);     
+			} 
 		}
 	}
-}
-
-function teleportCam(portal, rotation, position, liikumisvektor) {
-	var pos = portal.position;
-	camera.position.set(pos.x + position.x, pos.y + position.y, pos.z + position.z);
-	camera.rotation.y = portal.rotation.y + Math.PI + rotation;
-	liikumisvektor.applyAxisAngle(new THREE.Vector3(0,1,0), camera.rotation.y - Math.PI);
-	camera.translateOnAxis(liikumisvektor, 2);
 }
