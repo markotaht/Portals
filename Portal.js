@@ -97,43 +97,6 @@ Portal.prototype.portal_view = function(camera, move=false){
 	var inverse_view_to_source = new THREE.Matrix4();
 	inverse_view_to_source.compose(newcampos,camerarot,camerascale);
 	
-	// http://www.terathon.com/lengyel/Lengyel-Oblique.pdf Siit saada kuidagi oblique frustum culling.
-	//Siin kusagil on mingi matemaatika katki.
-	/*var M3 = new THREE.Vector4(
-			camera.projectionMatrix.elements[2], 
-			camera.projectionMatrix.elements[6],
-			camera.projectionMatrix.elements[10],
-			camera.projectionMatrix.elements[14]
-			);
-		
-	var M4 = new THREE.Vector4(
-			camera.projectionMatrix.elements[3], 
-			camera.projectionMatrix.elements[7],
-			camera.projectionMatrix.elements[11],
-			camera.projectionMatrix.elements[15]
-			);
-	
-	var normal = new THREE.Vector3(0, 0, 1).applyQuaternion(srcquat);
-	var clipPlane = new THREE.Vector4(normal.x, normal.y, normal.z, srcpos.length());
-
-	clipPlane.applyMatrix4(new THREE.Matrix4().getInverse(inverse_view_to_source));
-	if(clipPlane.w > 0){
-		return inverse_view_to_source;
-	}
-	var Q = new THREE.Vector4(Math.sign(clipPlane.x), Math.sign(clipPlane.y), 1, 1)
-		.applyMatrix4(new THREE.Matrix4().getInverse(camera.projectionMatrix.clone()));
-	var a = 2/ clipPlane.clone().dot(Q);
-	
-	//See panna projections maatrixi 3 reaks.
-	var M3p = clipPlane.clone().multiplyScalar(a).sub(M4);
-//	camera.projectionMatrix.elements[2] = M3p.x;
-//	camera.projectionMatrix.elements[6] = M3p.y;
-//	camera.projectionMatrix.elements[10] = M3p.z;
-//	camera.projectionMatrix.elements[14] = M3p.w;
-
-	var clipPlane = new THREE.Plane();
-	clipPlane.setFromNormalAndCoplanarPoint(normal,this.quad.position);
-	*/
 	return inverse_view_to_source;
 }
 

@@ -77,8 +77,8 @@ function onLoad() {
 	
 	createObjects(scene);
 	
-	portal1 = new Portal(-wallPos+0.005,-5,0.005, Math.PI/2, "portal1");
-	portal2 = portal1.createBoundPortal( wallPos- 0.005, -5,0.005,-Math.PI/2, "portal2");
+	portal1 = new Portal(-wallPos+0.02,-5,0.02, Math.PI/2, "portal1");
+	portal2 = portal1.createBoundPortal( wallPos- 0.02, -5,0.02,-Math.PI/2, "portal2");
 	
 	//textures
 	var loader = new THREE.TextureLoader();
