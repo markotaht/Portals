@@ -19,7 +19,7 @@ var keyboard = new THREEx.KeyboardState();
 
 var wallPos = 50; // seina kaugus 0punktist
 var atWall = false;
-var quadSideLength = 10; // portaali quadi küljepikkus
+var quadSideLength = 40; // portaali quadi küljepikkus
 
 var speed = 1;
 

@@ -1,6 +1,6 @@
 var Portal = function(x,y,z,rot,name){
-	this.maxscale = 5.0;
-	this.minscale = 0.5;
+	this.maxscale = 1.25;
+	this.minscale = 0.125;
 	this.otherPortal = null
 	this.quad = addQuad(null, x,y,z, rot);
 	this.quad.name = name; 
@@ -17,19 +17,19 @@ Portal.prototype.createBoundPortal = function(x,y,z,rot,name){
 
 Portal.prototype.scaleUp = function(){
 	if(this.quad.scale.x < this.maxscale) {
-		this.quad.scale.x += 0.1;
-		this.quad.scale.y += 0.1;
-		this.otherPortal.quad.scale.x += 0.1;
-		this.otherPortal.quad.scale.y += 0.1;
+		this.quad.scale.x += 0.025;
+		this.quad.scale.y += 0.025;
+		this.otherPortal.quad.scale.x += 0.025;
+		this.otherPortal.quad.scale.y += 0.025;
 	}
 }
 
 Portal.prototype.scaleDown = function(){
 	if(this.quad.scale.x > this.minscale){
-		this.quad.scale.x -= 0.1;
-		this.quad.scale.y -= 0.1;
-		this.otherPortal.quad.scale.x -= 0.1;
-		this.otherPortal.quad.scale.y -= 0.1;
+		this.quad.scale.x -= 0.025;
+		this.quad.scale.y -= 0.025;
+		this.otherPortal.quad.scale.x -= 0.025;
+		this.otherPortal.quad.scale.y -= 0.025;
 	}
 }
 
