@@ -1,5 +1,4 @@
 var Portal = function(x,y,z,rot,name){
-	this.position = new THREE.Vector3(x,y,z);
 	this.maxscale = 5.0;
 	this.minscale = 0.5;
 	this.otherPortal = null
@@ -7,6 +6,19 @@ var Portal = function(x,y,z,rot,name){
 	this.quad.name = name; 
 	this.scene = new THREE.Scene();
 	this.scene.add(this.quad);
+	this.clipPlane = this.calculateClipPlane();
+}
+
+Portal.prototype.calculateClipPlane = function(){
+	this.clipPlane = new THREE.Plane();
+	var srcpos = new THREE.Vector3();
+	var srcquat = new THREE.Quaternion();
+	var srcscale = new THREE.Vector3();
+	this.quad.matrixWorld.decompose(srcpos, srcquat, srcscale);
+	var normal = new THREE.Vector3(0, 0, 1).applyQuaternion(srcquat);
+	console.log(srcpos);
+	this.clipPlane.setFromNormalAndCoplanarPoint(normal,srcpos);
+	return this.clipPlane;
 }
 
 Portal.prototype.createBoundPortal = function(x,y,z,rot,name){
@@ -47,6 +59,7 @@ Portal.prototype.place = function(){
 		pos.addVectors(intersects[0].face.normal, intersects[0].point);
 		this.quad.lookAt(pos);
 	}
+	this.calculateClipPlane();
 }
 
 Portal.prototype.teleportCam = function(camera, rotation, position, liikumisvektor) {
@@ -100,7 +113,7 @@ Portal.prototype.portal_view = function(camera, move=false){
 	
 	// http://www.terathon.com/lengyel/Lengyel-Oblique.pdf Siit saada kuidagi oblique frustum culling.
 	//Siin kusagil on mingi matemaatika katki.
-	var M3 = new THREE.Vector4(
+	/*var M3 = new THREE.Vector4(
 			camera.projectionMatrix.elements[2], 
 			camera.projectionMatrix.elements[6],
 			camera.projectionMatrix.elements[10],
@@ -116,7 +129,8 @@ Portal.prototype.portal_view = function(camera, move=false){
 	
 	var normal = new THREE.Vector3(0, 0, 1).applyQuaternion(srcquat);
 	var clipPlane = new THREE.Vector4(normal.x, normal.y, normal.z, srcpos.length());
-	clipPlane.applyMatrix4(new THREE.Matrix4().getInverse(camera.matrixWorldInverse.clone().transpose()));
+
+	clipPlane.applyMatrix4(new THREE.Matrix4().getInverse(inverse_view_to_source));
 	if(clipPlane.w > 0){
 		return inverse_view_to_source;
 	}
@@ -126,10 +140,14 @@ Portal.prototype.portal_view = function(camera, move=false){
 	
 	//See panna projections maatrixi 3 reaks.
 	var M3p = clipPlane.clone().multiplyScalar(a).sub(M4);
-	camera.projectionMatrix.elements[2] = M3p.x;
-	camera.projectionMatrix.elements[6] = M3p.y;
-	camera.projectionMatrix.elements[10] = M3p.z;
-	camera.projectionMatrix.elements[14] = M3p.w;
+//	camera.projectionMatrix.elements[2] = M3p.x;
+//	camera.projectionMatrix.elements[6] = M3p.y;
+//	camera.projectionMatrix.elements[10] = M3p.z;
+//	camera.projectionMatrix.elements[14] = M3p.w;
+
+	var clipPlane = new THREE.Plane();
+	clipPlane.setFromNormalAndCoplanarPoint(normal,this.quad.position);
+	*/
 	return inverse_view_to_source;
 }
 
@@ -157,6 +175,7 @@ Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, mov
 		
 		renderer.render(portal.scene,camera);
 		camera.matrixWorld = portal.portal_view(camera,move);
+		renderer.clippingPlanes = [this.clipPlane];
 		if(level == maxlevel){
 			gl.colorMask(true, true, true, true);
 			gl.depthMask(true);
@@ -183,6 +202,7 @@ Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, mov
 		gl.stencilOp(gl.DECR, gl.KEEP, gl.KEEP);
 		camera.matrixWorld = original_mat.clone();
 		camera.projectionMatrix = original_proj.clone();
+	//	renderer.clippingPlanes = [];
 		renderer.render(portal.scene,camera);
 	}
 	
@@ -328,7 +348,7 @@ function draw() {
 	renderer.autoClear = false;
 	renderer.clear(true,true,true);
 	camera.updateMatrixWorld();
-	camera.updateProjectionMatrix ();
+//	camera.updateProjectionMatrix ();
 	camera.matrixAutoUpdate = false;
 	portal1.drawRecursivePortal(camera,renderer.context,0,3);
 	camera.matrixAutoUpdate = true;
