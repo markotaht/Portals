@@ -6,19 +6,6 @@ var Portal = function(x,y,z,rot,name){
 	this.quad.name = name; 
 	this.scene = new THREE.Scene();
 	this.scene.add(this.quad);
-	this.clipPlane = this.calculateClipPlane();
-}
-
-Portal.prototype.calculateClipPlane = function(){
-	this.clipPlane = new THREE.Plane();
-	var srcpos = new THREE.Vector3();
-	var srcquat = new THREE.Quaternion();
-	var srcscale = new THREE.Vector3();
-	this.quad.matrixWorld.decompose(srcpos, srcquat, srcscale);
-	var normal = new THREE.Vector3(0, 0, 1).applyQuaternion(srcquat);
-	console.log(srcpos);
-	this.clipPlane.setFromNormalAndCoplanarPoint(normal,srcpos);
-	return this.clipPlane;
 }
 
 Portal.prototype.createBoundPortal = function(x,y,z,rot,name){
@@ -59,7 +46,6 @@ Portal.prototype.place = function(){
 		pos.addVectors(intersects[0].face.normal, intersects[0].point);
 		this.quad.lookAt(pos);
 	}
-	this.calculateClipPlane();
 }
 
 Portal.prototype.teleportCam = function(camera, rotation, position, liikumisvektor) {
@@ -175,7 +161,6 @@ Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, mov
 		
 		renderer.render(portal.scene,camera);
 		camera.matrixWorld = portal.portal_view(camera,move);
-		renderer.clippingPlanes = [this.clipPlane];
 		if(level == maxlevel){
 			gl.colorMask(true, true, true, true);
 			gl.depthMask(true);
@@ -187,7 +172,6 @@ Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, mov
 			gl.stencilMask(0x00);
 			
 			gl.stencilFunc(gl.EQUAL,level+1,0xFF);
-			
 			renderer.render(scene,camera);
 		}else{
 			this.drawRecursivePortal(camera,gl, level+1,maxlevel,false);
@@ -202,8 +186,7 @@ Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, mov
 		gl.stencilOp(gl.DECR, gl.KEEP, gl.KEEP);
 		camera.matrixWorld = original_mat.clone();
 		camera.projectionMatrix = original_proj.clone();
-	//	renderer.clippingPlanes = [];
-		renderer.render(portal.scene,camera);
+		renderer.render(portal.scene,camera);		
 	}
 	
 	gl.disable(gl.STENCIL_TEST);
@@ -217,7 +200,7 @@ Portal.prototype.drawRecursivePortal = function(camera, gl, level, maxlevel, mov
 	gl.depthFunc(gl.ALWAYS);
 	
 	renderer.clear(false,true,false);
-	
+			
 	for(var i in portals){
 		renderer.render(portals[i].scene,camera);
 	}
