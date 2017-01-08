@@ -4,7 +4,7 @@ Project page:
 https://courses.cs.ut.ee/2016/cg/fall/Main/Project-Portals
 
 Demo:
-http://kodu.ut.ee/~marko93/Portals/
+http://kodu.ut.ee/~dianx93/Arvutigraafika/Portals/
 
 Controls:
 * W, A, S, D - move
